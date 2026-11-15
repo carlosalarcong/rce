@@ -18,7 +18,7 @@
 - **Circuit breaker** (`CircuitBreakerInterface`): Ganesha con estrategia por tasa, estado en Valkey y umbrales en `CIRCUIT_BREAKER_*`.
 - **Locks:** `symfony/lock` sobre Valkey (`LOCK_DSN`).
 - **Valkey 9.1** en Docker, la misma versión por defecto de **Memorystore for Valkey** (GCP), que es lo que se usa en producción.
-- **Fichas de adaptadores** (`Adapter/Webpay`, `Adapter/TransbankPos`, `Adapter/Imed`): contrato, nombre, flujo esperado y tests obligatorios. Las demás carpetas de adaptadores quedan vacías.
+- **Fichas de adaptadores** (`Adapter/Webpay`, `Adapter/TransbankPos`, `Adapter/Imed`, `Adapter/Klap`): contrato, nombre, qué documentación existe, flujo esperado y tests obligatorios. Webpay y Klap tienen documentación pública; el POS de Transbank también, pero requiere la máquina para probar; IMED la entrega solo con convenio. Las demás carpetas de adaptadores quedan vacías.
 - **Reglas:** la caja solo usa `Contract/` y `Application/` de Integration (Deptrac, `deptrac.modules.yaml`); los adaptadores solo conocen `Contract/` (`deptrac.layers.yaml`); un adaptador no usa a otro (`scripts/check-adapters.sh` en `make rules`).
 
 ## Pendientes (resolver antes del primer cobro real)
@@ -30,7 +30,7 @@
 6. **Auditoría de cada cambio de estado:** quién o qué lo causó, cuándo y la respuesta del proveedor. Depende de `Platform/Audit`, que todavía no existe.
 7. **Webhooks:** `UI/WebhookController` (`POST /webhooks/{provider}`) toca el firewall (`Platform/Security`), así que requiere confirmación. Además, la URL de retorno es por subdominio del tenant.
 8. **Value object `Run`:** los contratos de bonos reciben el RUN como texto normalizado. Cambiar el tipo cuando exista `Run` en Platform.
-9. **POS de Transbank:** el POS está conectado al computador de recepción, no al servidor en GCP. Hay que definir cómo llega el servidor a la máquina (solución en la nube de Transbank o agente local) antes de implementar `Adapter/TransbankPos`.
+9. **POS de Transbank:** la documentación (revisada el 2026-11-15) resuelve la conexión: un agente local de Transbank en el computador de recepción (websocket en `localhost:8090`) y la pantalla de caja le habla con JavaScript. El servidor no habla con la máquina. **Queda pendiente** cómo se respalda un "aprobado" que llega desde el navegador (conciliación con el reporte de Transbank, permisos y auditoría). Ver `Adapter/TransbankPos/CLAUDE.md`. El RCE usa el puerto 8180 en Docker para no chocar con el agente.
 10. **Memorystore en producción:** crear la instancia con Valkey 9.1 (no se puede bajar de versión después) y configurar `REDIS_URL` y `LOCK_DSN` con su IP privada.
 
 ## Consecuencias
