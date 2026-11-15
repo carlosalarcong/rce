@@ -1,0 +1,33 @@
+framework:
+    workflows:
+        # Integration/Payments: started → pending_confirmation → confirmed | rejected | expired
+        # Solo se avanza a estados válidos; nunca se retrocede ni se salta un estado.
+        payment_attempt:
+            type: state_machine
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: method
+                property: status
+            supports:
+                - App\Integration\Payments\Domain\PaymentAttempt
+            initial_marking: started
+            places:
+                - started
+                - pending_confirmation
+                - confirmed
+                - rejected
+                - expired
+            transitions:
+                request_confirmation:
+                    from: started
+                    to: pending_confirmation
+                confirm:
+                    from: pending_confirmation
+                    to: confirmed
+                reject:
+                    from: pending_confirmation
+                    to: rejected
+                expire:
+                    from: pending_confirmation
+                    to: expired

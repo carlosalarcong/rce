@@ -6,7 +6,7 @@ COPY --from=ghcr.io/mlocati/php-extension-installer:2 /usr/bin/install-php-exten
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 RUN apk add --no-cache git unzip \
-    && install-php-extensions pdo_pgsql pgsql intl zip apcu
+    && install-php-extensions pdo_pgsql pgsql intl zip apcu redis
 
 COPY docker/php/conf.d/app.ini $PHP_INI_DIR/conf.d/zz-app.ini
 

@@ -41,7 +41,7 @@ Modulo/
 ```
 
 ## Reglas de dependencia (Deptrac las hace cumplir)
-1. Las dependencias van **solo hacia abajo**: `Ambulatory | Inpatient | PublicSector` → `Clinical` → `Platform`. `Integration` puede usar `Clinical` y `Platform`.
+1. Las dependencias van **solo hacia abajo**: `Ambulatory | Inpatient | PublicSector` → `Clinical` → `Platform`. `Integration` puede usar `Clinical` y `Platform`. La caja (`Ambulatory`, `Inpatient`) puede usar de `Integration` **solo** su `Contract/` y su `Application/`, nunca un adaptador.
 2. **Nunca al revés.** `Clinical` no sabe que existen la caja, el hospital ni el sector público.
 3. Un módulo **no usa entidades ni repositorios de otro**. Se comunica solo por:
    - servicios de la capa `Application` del otro módulo, o

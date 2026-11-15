@@ -50,6 +50,7 @@ lint: ## YAML, Twig, contenedor de servicios y composer.json
 
 rules: ## Reglas que no cubren PHPStan ni Deptrac
 	@! grep -rnE 'setDbPassword\(|getDbPassword\(|db_password' src/ || { echo 'La clave de las bases de tenant no se lee ni se guarda en tenant_db_config (docs/adr/0003)'; exit 1; }
+	@bash scripts/check-adapters.sh
 
 ci-rapida: rules cs lint stan deptrac test-unit ## Lo que corre el hook antes de cada push (menos de un minuto)
 

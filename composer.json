@@ -7,6 +7,7 @@
         "php": ">=8.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "ackintosh/ganesha": "^4.0",
         "doctrine/doctrine-bundle": "^2.18",
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "doctrine/orm": "^3.8",
@@ -17,12 +18,14 @@
         "symfony/dotenv": "7.4.*",
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.4.*",
+        "symfony/lock": "7.4.*",
         "symfony/messenger": "7.4.*",
         "symfony/runtime": "7.4.*",
         "symfony/stimulus-bundle": "^3.7",
         "symfony/twig-bundle": "7.4.*",
         "symfony/ux-live-component": "^3.7",
         "symfony/ux-turbo": "^3.7",
+        "symfony/workflow": "7.4.*",
         "symfony/yaml": "7.4.*"
     },
     "require-dev": {

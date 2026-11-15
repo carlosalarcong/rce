@@ -27,12 +27,13 @@ jobs:
       COMPOSE_PROJECT_NAME: rce-ci-${{ github.run_id }}
       HTTP_PORT: 0
       DB_PORT: 0
+      REDIS_PORT: 0
     steps:
       - uses: actions/checkout@v7
 
       # La misma imagen PHP 8.5 que desarrollo (docker/php/Dockerfile).
       - name: Levantar el stack
-        run: docker compose up -d --build --wait php database
+        run: docker compose up -d --build --wait php database redis
 
       - name: Dependencias
         run: make install

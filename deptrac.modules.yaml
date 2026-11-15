@@ -1,6 +1,8 @@
-# Regla 1 y 2 del CLAUDE.md: las dependencias entre módulos van solo hacia abajo.
+# Reglas 1 y 2 del CLAUDE.md: las dependencias entre módulos van solo hacia abajo.
 #   Ambulatory | Inpatient | PublicSector -> Clinical -> Platform
 #   Integration -> Clinical, Platform
+#   Ambulatory | Inpatient -> IntegrationApi (solo Contract/ y Application/ de Integration: el "menú";
+#                             nunca los adaptadores ni el dominio de Integration)
 deptrac:
   paths:
     - ./src
@@ -9,8 +11,15 @@ deptrac:
   layers:
     - name: Platform
       collectors: [{ type: directory, value: src/Platform/.* }]
+    - name: IntegrationApi
+      collectors: [{ type: directory, value: 'src/Integration/[^/]+/(Contract|Application)/.*' }]
     - name: Integration
-      collectors: [{ type: directory, value: src/Integration/.* }]
+      collectors:
+        - type: bool
+          must:
+            - { type: directory, value: src/Integration/.* }
+          must_not:
+            - { type: directory, value: 'src/Integration/[^/]+/(Contract|Application)/.*' }
     - name: Clinical
       collectors: [{ type: directory, value: src/Clinical/.* }]
     - name: Ambulatory
@@ -22,7 +31,8 @@ deptrac:
   ruleset:
     Platform: ~
     Clinical: [Platform]
-    Integration: [Clinical, Platform]
-    Ambulatory: [Clinical, Platform]
-    Inpatient: [Clinical, Platform]
+    IntegrationApi: [Integration, Clinical, Platform]
+    Integration: [IntegrationApi, Clinical, Platform]
+    Ambulatory: [IntegrationApi, Clinical, Platform]
+    Inpatient: [IntegrationApi, Clinical, Platform]
     PublicSector: [Clinical, Platform]

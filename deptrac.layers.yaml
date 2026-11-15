@@ -1,7 +1,9 @@
 # Regla 5 del CLAUDE.md y capas internas de cada módulo:
-#   Domain no depende de nada externo (ni Symfony, ni Doctrine, ni otras capas).
-#   Application usa Domain. Infrastructure y UI usan Application y Domain.
+#   Domain y Contract no dependen de nada externo (ni Symfony, ni Doctrine, ni otras capas).
+#   Application usa Domain y Contract. Infrastructure y UI usan Application, Domain y Contract.
 #   UI no usa Infrastructure.
+#   Adapter (proveedores externos, src/Integration/*/Adapter) solo conoce el Contract.
+#   Que un adaptador no use a otro lo revisa make rules.
 deptrac:
   paths:
     - ./src
@@ -10,20 +12,27 @@ deptrac:
   layers:
     - name: Domain
       collectors: [{ type: directory, value: src/[^/]+/[^/]+/Domain/.* }]
+    - name: Contract
+      collectors: [{ type: directory, value: src/[^/]+/[^/]+/Contract/.* }]
     - name: Application
       collectors: [{ type: directory, value: src/[^/]+/[^/]+/Application/.* }]
     - name: Infrastructure
       collectors: [{ type: directory, value: src/[^/]+/[^/]+/Infrastructure/.* }]
     - name: UI
       collectors: [{ type: directory, value: src/[^/]+/[^/]+/UI/.* }]
+    - name: Adapter
+      collectors: [{ type: directory, value: src/[^/]+/[^/]+/Adapter/.* }]
     - name: Framework
       collectors:
         - { type: classLike, value: '^Symfony\\.*' }
         - { type: classLike, value: '^Doctrine\\.*' }
         - { type: classLike, value: '^Hakam\\.*' }
         - { type: classLike, value: '^Twig\\.*' }
+        - { type: classLike, value: '^Ackintosh\\.*' }
   ruleset:
     Domain: ~
-    Application: [Domain, Framework]
-    Infrastructure: [Application, Domain, Framework]
-    UI: [Application, Domain, Framework]
+    Contract: ~
+    Application: [Domain, Contract, Framework]
+    Infrastructure: [Application, Domain, Contract, Framework]
+    UI: [Application, Domain, Contract, Framework]
+    Adapter: [Contract, Framework]
