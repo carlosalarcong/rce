@@ -87,7 +87,8 @@ Modulo/
 - Cada funcionalidad nueva llega **con sus tests en el mismo cambio**, no después.
 - `tests/` replica la estructura de `src/`: `Unit/`, `Integration/`, `Functional/`.
 - Lo clínico, la caja y los permisos necesitan tests de casos borde (no solo el camino feliz).
-- Antes de terminar una tarea: tests, PHPStan y Deptrac deben pasar.
+- Antes de terminar una tarea: `make check` debe pasar (tests, PHPStan, Deptrac, estilo, lint y reglas). El hook `pre-push` corre `make ci-rapida` y la CI corre `make check` en el runner propio (ver `docs/ci.md`).
+- Ramas: solo `master` y `develop`.
 
 ## Cómo trabajar en este repo (para Claude Code)
 1. **Lee el `CLAUDE.md` del módulo** antes de tocarlo.

@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, master]
+  push:
+    branches: [develop, master]
+  workflow_dispatch:
+
+# Un PR o rama a la vez: un push nuevo cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: make check
+    # El runner propio si la variable del repositorio CI_RUNNER dice su etiqueta (rce-local; docs/ci.md).
+    # Sin la variable, los servidores de GitHub. Versión fija de Ubuntu: la misma LTS que docker/runner.
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 30
+    env:
+      # Proyecto y puertos propios: no choca con el stack de desarrollo del mismo equipo.
+      COMPOSE_PROJECT_NAME: rce-ci-${{ github.run_id }}
+      HTTP_PORT: 0
+      DB_PORT: 0
+    steps:
+      - uses: actions/checkout@v7
+
+      # La misma imagen PHP 8.5 que desarrollo (docker/php/Dockerfile).
+      - name: Levantar el stack
+        run: docker compose up -d --build --wait php database
+
+      - name: Dependencias
+        run: make install
+
+      - name: make check
+        run: make check
+
+      - name: Bajar el stack
+        if: always()
+        run: docker compose down -v --remove-orphans

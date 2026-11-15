@@ -1,0 +1,33 @@
+# Runner propio de GitHub Actions en este equipo (docs/ci.md). Proyecto aparte del stack de desarrollo.
+#   make runner          lo construye, lo registra y lo deja corriendo
+#   make runner-logs     lo que está haciendo
+#   make runner-detener  lo detiene (queda registrado)
+#   make runner-quitar   lo da de baja en GitHub
+name: rce-runner
+services:
+  runner:
+    build:
+      context: docker/runner
+      args:
+        RUNNER_VERSION: ${RUNNER_VERSION:-}
+        RUNNER_ARCH: ${RUNNER_ARCH:-}
+        RUNNER_SHA256: ${RUNNER_SHA256:-}
+    image: rce-runner:local
+    container_name: rce_runner
+    restart: unless-stopped
+    environment:
+      RUNNER_URL: https://github.com/carlosalarcong/rce
+      RUNNER_TOKEN: ${RUNNER_TOKEN:-}
+      RUNNER_NAME: ${RUNNER_NAME:-rce-local}
+      RUNNER_LABELS: rce-local
+      RUNNER_WORKDIR: ${RUNNER_WORKDIR:?}
+    volumes:
+      # Maneja el Docker del equipo: la CI levanta el stack de compose.yaml como proyecto aparte.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # La carpeta de trabajo en la misma ruta dentro y fuera: compose.yaml monta ./ en el contenedor PHP,
+      # y esa ruta la resuelve el Docker del equipo, no el runner.
+      - ${RUNNER_WORKDIR:?}:${RUNNER_WORKDIR:?}
+      - estado:/estado
+
+volumes:
+  estado:

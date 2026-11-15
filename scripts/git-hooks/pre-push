@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Antes de cada «git push», lo rápido de la CI (make ci-rapida: reglas, estilo, lint, PHPStan, Deptrac y
+# tests unitarios; menos de un minuto). Si algo falla, no se sube nada. La CI completa corre en el runner.
+# make hooks (o make dev) lo activa. En un apuro: git push --no-verify.
+set -euo pipefail
+
+raiz="$(git rev-parse --show-toplevel)"
+cd "$raiz"
+
+# Solo borrar ramas remotas no necesita revisión.
+solo_borra=1
+while read -r _ref_local sha_local _ref_remota _sha_remoto; do
+    if [ "$sha_local" != "0000000000000000000000000000000000000000" ]; then
+        solo_borra=0
+    fi
+done
+if [ "$solo_borra" -eq 1 ]; then
+    exit 0
+fi
+
+if [ -z "$(docker compose ps --status running --quiet php 2>/dev/null)" ]; then
+    echo "Antes de subir, la revisión rápida necesita el stack de desarrollo corriendo (make up)." >&2
+    echo "Para subir igual: git push --no-verify (y corre make ci-rapida después)." >&2
+    exit 1
+fi
+
+echo "== Revisión rápida antes de subir (make ci-rapida) =="
+if make ci-rapida; then
+    echo "== En verde: se sube =="
+else
+    echo "" >&2
+    echo "La revisión rápida falló: no se subió nada. Arregla lo que dice arriba y vuelve a hacer git push." >&2
+    exit 1
+fi
