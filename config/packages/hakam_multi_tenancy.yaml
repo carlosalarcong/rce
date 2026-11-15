@@ -1,0 +1,43 @@
+# Referencia: vendor/hakam/multi-tenancy-bundle/examples/02-bundle-configuration.php
+hakam_multi_tenancy:
+    tenant_database_className: App\Platform\Tenancy\Infrastructure\Doctrine\Entity\TenantDbConfig
+    # Columna con la que se busca el tenant: el subdominio (centro.dominio.cl).
+    tenant_database_identifier: subdomain
+
+    # Conexión de arranque del EM de tenant, antes de cualquier SwitchDbEvent.
+    # Apunta a una base que NO existe a propósito: si algo usa el EM de tenant
+    # sin tenant resuelto, falla en vez de leer/escribir en Main.
+    # Usuario, clave y host también son los valores por defecto cuando el
+    # registro del tenant los deja en null (no guardamos claves en Main).
+    tenant_connection:
+        url: '%env(resolve:TENANT_BOOT_DATABASE_URL)%'
+        host: '%env(TENANT_DB_HOST)%'
+        port: '%env(TENANT_DB_PORT)%'
+        driver: pdo_pgsql
+        charset: utf8
+        server_version: '18'
+
+    tenant_migration:
+        tenant_migration_namespace: DoctrineMigrations\Tenant
+        tenant_migration_path: '%kernel.project_dir%/migrations/Tenant'
+
+    # Hakam exige un mapping propio. Los mappings de los módulos se agregan
+    # en doctrine.yaml (entity_managers.tenant.mappings), ver docs/adr/0002.
+    tenant_entity_manager:
+        tenant_naming_strategy: doctrine.orm.naming_strategy.underscore
+        mapping:
+            type: xml
+            dir: '%kernel.project_dir%/src/Platform/Tenancy/Infrastructure/Doctrine/TenantMapping'
+            prefix: App\Platform\Tenancy\Domain
+            alias: Tenant
+            is_bundle: false
+
+    resolver:
+        enabled: true
+        strategy: subdomain
+        throw_on_missing: false
+        excluded_paths:
+            - /_profiler
+            - /_wdt
+        options:
+            base_domain: '%env(TENANT_BASE_DOMAIN)%'

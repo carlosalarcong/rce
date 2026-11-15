@@ -1,0 +1,29 @@
+# Regla 5 del CLAUDE.md y capas internas de cada módulo:
+#   Domain no depende de nada externo (ni Symfony, ni Doctrine, ni otras capas).
+#   Application usa Domain. Infrastructure y UI usan Application y Domain.
+#   UI no usa Infrastructure.
+deptrac:
+  paths:
+    - ./src
+  exclude_files:
+    - '#.*Kernel\.php$#'
+  layers:
+    - name: Domain
+      collectors: [{ type: directory, value: src/[^/]+/[^/]+/Domain/.* }]
+    - name: Application
+      collectors: [{ type: directory, value: src/[^/]+/[^/]+/Application/.* }]
+    - name: Infrastructure
+      collectors: [{ type: directory, value: src/[^/]+/[^/]+/Infrastructure/.* }]
+    - name: UI
+      collectors: [{ type: directory, value: src/[^/]+/[^/]+/UI/.* }]
+    - name: Framework
+      collectors:
+        - { type: classLike, value: '^Symfony\\.*' }
+        - { type: classLike, value: '^Doctrine\\.*' }
+        - { type: classLike, value: '^Hakam\\.*' }
+        - { type: classLike, value: '^Twig\\.*' }
+  ruleset:
+    Domain: ~
+    Application: [Domain, Framework]
+    Infrastructure: [Application, Domain, Framework]
+    UI: [Application, Domain, Framework]

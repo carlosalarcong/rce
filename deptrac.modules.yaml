@@ -1,0 +1,28 @@
+# Regla 1 y 2 del CLAUDE.md: las dependencias entre módulos van solo hacia abajo.
+#   Ambulatory | Inpatient | PublicSector -> Clinical -> Platform
+#   Integration -> Clinical, Platform
+deptrac:
+  paths:
+    - ./src
+  exclude_files:
+    - '#.*Kernel\.php$#'
+  layers:
+    - name: Platform
+      collectors: [{ type: directory, value: src/Platform/.* }]
+    - name: Integration
+      collectors: [{ type: directory, value: src/Integration/.* }]
+    - name: Clinical
+      collectors: [{ type: directory, value: src/Clinical/.* }]
+    - name: Ambulatory
+      collectors: [{ type: directory, value: src/Ambulatory/.* }]
+    - name: Inpatient
+      collectors: [{ type: directory, value: src/Inpatient/.* }]
+    - name: PublicSector
+      collectors: [{ type: directory, value: src/PublicSector/.* }]
+  ruleset:
+    Platform: ~
+    Clinical: [Platform]
+    Integration: [Clinical, Platform]
+    Ambulatory: [Clinical, Platform]
+    Inpatient: [Clinical, Platform]
+    PublicSector: [Clinical, Platform]

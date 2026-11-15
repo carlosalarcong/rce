@@ -1,0 +1,6 @@
+# Migraciones de la base Main. Las de tenant las maneja Hakam
+# (tenant:migrations:*), ver hakam_multi_tenancy.yaml.
+doctrine_migrations:
+    migrations_paths:
+        'DoctrineMigrations\Main': '%kernel.project_dir%/migrations/Main'
+    enable_profiler: false
