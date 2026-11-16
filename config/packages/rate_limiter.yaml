@@ -1,0 +1,8 @@
+framework:
+    rate_limiter:
+        # "¿Olvidaste tu contraseña?": 3 correos por hora por correo e IP.
+        password_reset_request:
+            policy: sliding_window
+            limit: 3
+            interval: '1 hour'
+            cache_pool: cache.rate_limiter

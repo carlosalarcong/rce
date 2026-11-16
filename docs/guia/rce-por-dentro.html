@@ -184,6 +184,7 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
       <a href="#avance">Avance</a>
       <a href="#identidad">Inicio de sesión</a>
       <a href="#caidas">Si una clínica cae</a>
+      <a href="#login">Iniciar sesión</a>
     </nav>
   </header>
 
@@ -531,9 +532,9 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
           <tr><td>Cola con reintentos</td><td class="pct">80 %</td><td>Hecho: bandeja por clínica, Cloud Tasks y simulador, reintentos, barrida. Falta: limpieza de encargos viejos y usarla en los cobros reales.</td></tr>
           <tr><td>Multi-sede</td><td class="pct">25 %</td><td>Hecho: una base por clínica, clave en Secret Manager. Falta: sucursales y cambio de clínica con un usuario (ADR 0005).</td></tr>
           <tr><td>Caja ambulatoria</td><td class="pct">20 %</td><td>Hecho: adaptadores de Webpay, POS e IMED, registro de proveedores, fusible y candado. Falta: la caja, los intentos de pago, el retorno y la configuración por clínica.</td></tr>
-          <tr><td>Seguridad</td><td class="pct">10 %</td><td>Hecho: claves en Secret Manager, llamadas internas firmadas. Falta: inicio de sesión y cifrado de campos.</td></tr>
+          <tr><td>Seguridad</td><td class="pct">20 %</td><td>Hecho: claves en Secret Manager, llamadas internas firmadas, inicio de sesión seguro, sesiones en Valkey. Falta: segundo factor y cifrado de campos.</td></tr>
           <tr><td>Visor de mensajes</td><td class="pct">10 %</td><td>Hecho: los fallidos quedan registrados con alerta. Falta: la pantalla.</td></tr>
-          <tr><td>Usuarios y roles</td><td class="pct">5 %</td><td>Hecho: ADR 0005 (propuesta). Falta: el código.</td></tr>
+          <tr><td>Usuarios y roles</td><td class="pct">15 %</td><td>Hecho: cuentas, inicio de sesión, recuperar contraseña, freno de intentos. Falta: clínica activa, perfiles y permisos, invitaciones.</td></tr>
           <tr><td>Atención ambulatoria</td><td class="pct">5 %</td><td>Hecho: maqueta y spec de navegación. Falta: agenda, recepción, telemedicina.</td></tr>
           <tr><td>Todo lo demás</td><td class="pct">0 %</td><td>Núcleo clínico, auditoría, FHIR, reportes, OIE, hospitalario y capa pública.</td></tr>
         </tbody>
@@ -651,6 +652,31 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
     </figure>
 
     <div class="rule"><strong>Planificado (antes de la primera clínica real):</strong> estado de las clínicas en verde o rojo en el panel de soporte, alertas automáticas, errores con el nombre de la clínica, respaldo diario por clínica, modo mantenimiento por clínica y manuales paso a paso para restaurar o volver a migrar solo esa clínica.</div>
+  </section>
+
+  <section id="login">
+    <div class="sec-head">
+      <span class="path">src/Platform/Identity · paso 1 de la ADR 0005</span>
+      <h2>Cómo se inicia sesión</h2>
+    </div>
+    <p>La persona entra con su correo y contraseña. Si no tiene sesión, el RCE la lleva a "Iniciar sesión"; si olvidó la contraseña, recibe un correo con un enlace para elegir una nueva. La cuenta es de la persona, no de una clínica: vive en la base Main.</p>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Protección</th><th>Para qué</th></tr></thead>
+        <tbody>
+          <tr><td>Contraseña cifrada (argon2id), nunca tal cual</td><td>Ni con acceso a la base se puede leer.</td></tr>
+          <tr><td>Mínimo 12 caracteres, sin símbolos obligatorios</td><td>Una frase larga es más segura y fácil de recordar.</td></tr>
+          <tr><td>El mismo mensaje si el correo no existe o la clave está mal</td><td>Nadie puede averiguar quién tiene cuenta.</td></tr>
+          <tr><td>Freno: 5 intentos fallidos cada 15 minutos</td><td>Evita que prueben miles de contraseñas.</td></tr>
+          <tr><td>Cuenta suspendida no entra</td><td>Se corta el acceso al instante.</td></tr>
+          <tr><td>Enlace de recuperación: 30 minutos, una vez, solo el último</td><td>Un correo viejo o reenviado no sirve.</td></tr>
+          <tr><td>En la base, solo la huella del enlace</td><td>Ni con acceso a la base se puede usar.</td></tr>
+          <tr><td>Al cambiar la contraseña se cierran las demás sesiones</td><td>Si alguien la tenía, queda afuera.</td></tr>
+          <tr><td>Sesiones en Valkey</td><td>En GCP todas las copias del RCE ven la misma sesión.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule"><strong>En tu computador:</strong> <code>make cuenta EMAIL=tu@correo.cl</code> crea tu cuenta; entra por <code>http://rce.localhost:8180</code>; los correos de prueba llegan a Mailpit en <code>http://localhost:8025</code> y nunca salen a internet.</div>
   </section>
 
   <footer>Versión en texto en el repositorio: <code>docs/guia/como-funciona-el-rce.md</code>. Decisiones completas en <code>docs/adr/</code>.</footer>

@@ -28,6 +28,7 @@ jobs:
       HTTP_PORT: 0
       DB_PORT: 0
       REDIS_PORT: 0
+      MAILPIT_PORT: 0
     steps:
       - uses: actions/checkout@v7
 

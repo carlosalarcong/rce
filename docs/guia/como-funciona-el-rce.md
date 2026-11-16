@@ -203,9 +203,9 @@ El whiteboard [Mapa de módulos RCE](https://claude.ai/artifact/SMhQcqUSiPsa6q5d
 | Cola con reintentos | 80 % | Hecho: bandeja por clínica, Cloud Tasks y simulador, reintentos, barrida, pruebas en vivo. Falta: limpieza de encargos viejos y usarla en los cobros reales |
 | Multi-sede | 25 % | Hecho: una base por clínica (Hakam), clave en Secret Manager, registro de clínicas. Falta: sucursales y cambio de clínica con un usuario (ADR 0005, propuesta) |
 | Caja ambulatoria | 20 % | Hecho: adaptadores de Webpay, POS de Transbank (servidor) e IMED, registro de proveedores, fusible, candado y estados del cobro. Falta: la caja misma, la tabla de intentos de pago, la página de retorno y la configuración por clínica |
-| Seguridad | 10 % | Hecho: claves en Secret Manager, credenciales que nunca se imprimen, llamadas internas firmadas. Falta: inicio de sesión, cifrado de campos y adjuntos |
+| Seguridad | 20 % | Hecho: claves en Secret Manager, credenciales que nunca se imprimen, llamadas internas firmadas, inicio de sesión seguro y sesiones en Valkey. Falta: segundo factor, cifrado de campos y adjuntos |
 | Visor de mensajes | 10 % | Hecho: los fallidos quedan registrados con alerta. Falta: la pantalla para verlos y reprocesarlos |
-| Usuarios y roles | 5 % | Hecho: ADR 0005 (propuesta). Falta: todo el código |
+| Usuarios y roles | 15 % | Hecho: cuentas, inicio de sesión, recuperar contraseña y freno de intentos. Falta: clínica activa, perfiles, permisos e invitaciones |
 | Atención (ambulatorio) | 5 % | Hecho: maqueta y spec de navegación por áreas. Falta: agenda, recepción y telemedicina |
 | Todo lo demás | 0 % | Núcleo clínico, auditoría, FHIR, reportes, OIE, hospitalario y capa pública: aún sin código |
 
@@ -263,3 +263,33 @@ Todas las clínicas entran por la misma aplicación, pero **cada una tiene su pr
 - restaurar **solo esa clínica** desde su respaldo diario.
 
 Mientras tanto, esa clínica queda en **modo mantenimiento** con un aviso claro, y las demás siguen normal. Cada caso tiene su manual paso a paso en `docs/manuales/`.
+
+---
+
+## 9. Cómo se inicia sesión (paso 1 de la ADR 0005)
+
+**Qué ve la persona:**
+1. Entra a la dirección del RCE. Si no tiene sesión, la lleva a **"Iniciar sesión"**: correo y contraseña.
+2. Si entra bien, llega a su inicio. Por ahora es provisorio; después ahí elegirá su clínica.
+3. **"¿Olvidaste tu contraseña?"** le manda un correo con un enlace para elegir una nueva.
+4. **"Salir"** cierra su sesión.
+
+**Cómo se protege, en simple:**
+
+| Protección | Para qué |
+|---|---|
+| La contraseña se guarda **cifrada** (argon2id), nunca tal cual | Ni con acceso a la base se puede leer |
+| Mínimo 12 caracteres, sin exigir símbolos raros | Una frase larga es más segura y fácil de recordar |
+| El mismo mensaje si el correo no existe o la clave está mal | Nadie puede averiguar quién tiene cuenta |
+| **Freno:** 5 intentos fallidos cada 15 minutos | Evita que prueben miles de contraseñas |
+| Una cuenta **suspendida** no entra, aunque la clave sea correcta | Se corta el acceso al instante |
+| El enlace de recuperación dura **30 minutos**, sirve **una vez** y solo vale el último | Un correo viejo o reenviado no sirve |
+| En la base se guarda solo la **huella** del enlace | Ni con acceso a la base se puede usar |
+| Al cambiar la contraseña se **cierran las demás sesiones** abiertas | Si alguien la tenía, queda afuera |
+| "Salir" es un botón protegido, no un enlace | Otra página no puede sacarte de la sesión |
+| Las sesiones viven en **Valkey** | En GCP todas las copias del RCE ven la misma sesión |
+
+**En tu computador:**
+- crea tu cuenta con `make cuenta EMAIL=tu@correo.cl` (pide la contraseña sin mostrarla);
+- entra por `http://rce.localhost:8180`;
+- los correos de prueba llegan a **Mailpit**, en `http://localhost:8025`, y nunca salen a internet.

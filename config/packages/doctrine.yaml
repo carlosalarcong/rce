@@ -23,6 +23,12 @@ doctrine:
                         is_bundle: false
                         dir: '%kernel.project_dir%/src/Platform/Tenancy/Infrastructure/Doctrine/Entity'
                         prefix: 'App\Platform\Tenancy\Infrastructure\Doctrine\Entity'
+                    # Cuentas (ADR 0005): entidades en Domain, mapeo XML en Infrastructure.
+                    PlatformIdentityMain:
+                        type: xml
+                        is_bundle: false
+                        dir: '%kernel.project_dir%/src/Platform/Identity/Infrastructure/Doctrine/Mapping'
+                        prefix: 'App\Platform\Identity\Domain'
             tenant:
                 naming_strategy: doctrine.orm.naming_strategy.underscore
                 identity_generation_preferences:

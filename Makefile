@@ -22,8 +22,16 @@ install: ## Instala dependencias de Composer
 dev: up install hooks ## Deja el entorno listo: contenedores, dependencias y hooks
 
 ## ── Calidad ─────────────────────────────────────────────────
-test: ## Corre todos los tests
+test: test-db ## Corre todos los tests
 	$(PHP) bin/phpunit
+
+test-db: ## Prepara la base Main de pruebas (rce_main_test) con sus migraciones
+	$(PHP) bin/console doctrine:database:create --env=test --if-not-exists -q
+	$(PHP) bin/console doctrine:migrations:migrate --env=test -n -q --allow-no-migration
+
+cuenta: ## Crea una cuenta para entrar al RCE: make cuenta EMAIL=tu@correo.cl
+	@[ -n "$(EMAIL)" ] || { echo "Falta el correo: make cuenta EMAIL=tu@correo.cl"; exit 1; }
+	$(DC) exec php bin/console rce:identity:create-account "$(EMAIL)"
 
 test-unit: ## Solo tests unitarios
 	$(PHP) bin/phpunit --testsuite unit
@@ -76,4 +84,4 @@ runner-detener: ## Detiene el runner (queda registrado)
 runner-quitar: ## Da de baja el runner en GitHub y lo borra de este equipo
 	bash scripts/runner/runner.sh quitar
 
-.PHONY: help up down sh install dev test test-unit test-external stan deptrac cs cs-fix lint rules ci-rapida check hooks runner runner-logs runner-detener runner-quitar
+.PHONY: help up down sh install dev test test-db cuenta test-unit test-external stan deptrac cs cs-fix lint rules ci-rapida check hooks runner runner-logs runner-detener runner-quitar

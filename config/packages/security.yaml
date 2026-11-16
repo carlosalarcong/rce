@@ -1,0 +1,53 @@
+# Inicio de sesión del RCE (ADR 0005, paso 1). Platform/Identity.
+security:
+    password_hashers:
+        # "auto": argon2id cuando está disponible (lo está en la imagen PHP).
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    providers:
+        accounts:
+            id: App\Platform\Identity\Infrastructure\Security\AccountUserProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
+            security: false
+        # La cola llama con su propia firma (ADR 0006): sin sesión ni login.
+        tasks:
+            pattern: ^/_tasks/
+            security: false
+        main:
+            lazy: true
+            provider: accounts
+            user_checker: App\Platform\Identity\Infrastructure\Security\AccountUserChecker
+            form_login:
+                login_path: identity_login
+                check_path: identity_login
+                username_parameter: email
+                password_parameter: password
+                enable_csrf: true
+                default_target_path: identity_home
+            # 5 intentos fallidos por correo e IP cada 15 minutos (y un tope por IP).
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+            # "Salir" es un POST con token CSRF: un enlace de otro sitio no te saca.
+            logout:
+                path: identity_logout
+                enable_csrf: true
+                target: identity_login
+
+    access_control:
+        - { path: ^/ingresar$, roles: PUBLIC_ACCESS }
+        - { path: ^/recuperar-clave, roles: PUBLIC_ACCESS }
+        - { path: ^/, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            # Cifrar es lento a propósito; en tests se baja al mínimo.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

@@ -28,6 +28,11 @@ services:
         factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
         arguments: ['%env(REDIS_URL)%']
 
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+        arguments:
+            - '@rce.redis'
+            - { prefix: 'rce:sesion:', ttl: 28800 }
+
 # Credenciales de proveedores: en dev y test, las públicas de sus ambientes de
 # prueba. En prod, ninguna (NoProviderCredentials) hasta la configuración por tenant.
 when@dev:

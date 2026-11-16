@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inicio · RCE{% endblock %}
+
+{% block body %}
+    <h1>Hola, {{ app.user.displayName }}</h1>
+    <p class="muted">Entraste como {{ app.user.email }}. Pronto aquí elegirás tu clínica.</p>
+
+    <form method="post" action="{{ logout_path() }}">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+        <button type="submit" class="secondary">Salir</button>
+    </form>
+{% endblock %}

@@ -6,11 +6,11 @@ El **% entre corchetes** es el avance real en el código a esa fecha. El detalle
 
 ## Base transversal · la usa todo el sistema (abajo: capa de integración)
 
-- **Usuarios y roles** [5 %]
+- **Usuarios y roles** [15 %]
   Permisos por perfil
 - **Auditoría** [0 %]
   Quién vio o cambió qué
-- **Seguridad** [10 %]
+- **Seguridad** [20 %]
   Cifrado · Ley 21.719
 - **Interoperabilidad** [0 %]
   API FHIR R4

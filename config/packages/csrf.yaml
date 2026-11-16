@@ -1,0 +1,9 @@
+# Protección CSRF clásica, guardada en la sesión (Valkey): funciona sin JavaScript.
+# La variante "sin estado" de la receta de Symfony depende de un JS que complete el
+# token; si ese JS no carga, los formularios fallan.
+framework:
+    form:
+        csrf_protection:
+            enabled: true
+    csrf_protection:
+        enabled: true

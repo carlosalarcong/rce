@@ -2,8 +2,22 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
-    # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    # Sesiones en Valkey (Memorystore en GCP): todas las copias del RCE ven la misma.
+    # Solo se abren al leer o escribir en ellas.
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
+        cookie_secure: auto
+        cookie_samesite: lax
+        cookie_httponly: true
+        name: rce_sesion
+
+    # Contadores del freno de intentos (inicio de sesión, recuperar clave) en Valkey:
+    # compartidos entre copias del RCE.
+    cache:
+        pools:
+            cache.rate_limiter:
+                adapter: cache.adapter.redis
+                provider: rce.redis
 
     #esi: true
     #fragments: true
@@ -13,3 +27,4 @@ when@test:
         test: true
         session:
             storage_factory_id: session.storage.factory.mock_file
+
