@@ -21,6 +21,12 @@
 - **Fichas de adaptadores** (`Adapter/Webpay`, `Adapter/TransbankPos`, `Adapter/Imed`, `Adapter/Klap`): contrato, nombre, qué documentación existe, flujo esperado y tests obligatorios. Webpay y Klap tienen documentación pública; el POS de Transbank también, pero requiere la máquina para probar; IMED la entrega solo con convenio. Las demás carpetas de adaptadores quedan vacías.
 - **Reglas:** la caja solo usa `Contract/` y `Application/` de Integration (Deptrac, `deptrac.modules.yaml`); los adaptadores solo conocen `Contract/` (`deptrac.layers.yaml`); un adaptador no usa a otro (`scripts/check-adapters.sh` en `make rules`).
 
+## Avance
+- **2026-11-15:**
+  - **Webpay** (`WebpayGateway`, librería oficial `transbank/transbank-sdk`) y el **lado del servidor del POS de Transbank** (`TransbankPosGateway`) quedan implementados y probados, pero inactivos.
+  - Las credenciales llegan por `ProviderCredentialsInterface`.
+  - IMED y Klap esperan su documentación. El análisis de IMED en melisa_prod está en `Adapter/Imed/CLAUDE.md`.
+
 ## Pendientes (resolver antes del primer cobro real)
 1. **Outbox por tenant.** Messenger usa `doctrine://default` (Main). La regla de guardar el `PaymentAttempt` y el mensaje en la misma transacción obliga a que el outbox viva en la **base del tenant**, y a que el worker cambie al tenant correcto (`SwitchDbEvent`) antes de procesar cada mensaje. Va con su propia ADR.
 2. **Reintentos:** `retry_strategy` por transporte con inmediato, +1 min y +5 min. El "inmediato" no sale con el multiplicador estándar; probablemente requiere una estrategia propia.

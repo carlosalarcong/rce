@@ -29,6 +29,13 @@
         </testsuite>
     </testsuites>
 
+    <!-- Pruebas contra servicios reales por internet: solo con `make test-external`. -->
+    <groups>
+        <exclude>
+            <group>external</group>
+        </exclude>
+    </groups>
+
     <source ignoreSuppressionOfDeprecations="true"
             ignoreIndirectDeprecations="true"
             restrictNotices="true"

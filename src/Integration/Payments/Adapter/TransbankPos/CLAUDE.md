@@ -1,29 +1,40 @@
 # Adapter/TransbankPos — POS de Transbank (máquina física)
 
-**Estado:** enchufe listo, sin implementar.
+**Estado:** lado del servidor implementado (`TransbankPosGateway`), **inactivo**. Falta la pantalla de caja que le habla a la máquina.
 
 - **Contrato:** `PaymentGatewayInterface`.
 - **Nombre:** `transbank_pos`. **Tag:** `#[AutoconfigureTag('payment.gateway')]`.
 
 ## Documentación (revisada el 2026-11-15)
-- **Pública:** "POS Integrado" en https://transbankdevelopers.cl/producto/posintegrado.
-- **Cómo se conecta:**
-  - La máquina va por USB o serial al **computador de recepción** y tiene su propia salida a internet (RJ45).
-  - En ese computador se instala el **agente de Transbank**: un programa local en Node.js que abre un websocket en `localhost:8090`. El repositorio original, `TransbankDevelopers/transbank-pos-sdk-web-agent`, está archivado; el vigente es `transbank-pos-sdk-web-agent2`.
-  - La pantalla de caja, en el navegador, habla con el agente usando la librería JavaScript `transbank-pos-sdk-web-js`.
-- **El servidor (GCP) no habla con la máquina.** No hay opción en la nube documentada.
-- Para probar hace falta una máquina física. No hay librería para PHP (no se necesita: el lado servidor no toca el POS).
-- El agente usa el puerto **8090**. Por eso el RCE en Docker usa 8180.
+- "POS Integrado" en https://transbankdevelopers.cl/producto/posintegrado.
+- **Conexión:**
+  - La máquina va por USB o serial al computador de recepción.
+  - El **agente de Transbank** (`transbank-pos-sdk-web-agent2`, Node.js) corre en ese computador y abre un websocket en `localhost:8090`.
+  - La pantalla de caja le habla con la librería JS `transbank-pos-sdk-web-js` (`doSale(monto, ticket)`, `refund(operationNumber)`).
+- **El servidor (GCP) no habla con la máquina.** Por eso el RCE en Docker usa el puerto 8180.
+- `melisa_prod` usa este mismo esquema (`WidgetsCaja.html.twig`), pero graba lo que manda el navegador sin validar nada. Aquí no.
 
-## Flujo esperado (definir el detalle al implementar)
-1. `startPayment()` crea el intento y devuelve `PaymentNextStep::WaitForTerminal`.
-2. La pantalla de caja (Stimulus) manda el monto al agente; el paciente pasa la tarjeta.
-3. La pantalla envía el resultado del POS al servidor y `confirm()` lo registra (`Confirmed` con código de autorización, `Rejected` o `Pending`).
-4. `refund()`: la anulación también se hace en la máquina, desde la pantalla de caja.
+## Cómo funciona
+1. `startPayment()` devuelve `PaymentNextStep::WaitForTerminal`, con la orden de compra como referencia. La pantalla la envía como `ticket` en `doSale()`.
+2. La pantalla reenvía la respuesta de la máquina al servidor en `ConfirmPayment::$terminalResponse`.
+3. `confirm()`:
+   - sin respuesta todavía → `Pending`;
+   - `ticket` distinto de la referencia → excepción (respuesta de otra venta);
+   - `responseCode` 0 → `Confirmed`. Exige código de autorización y que el monto coincida con `expectedAmount`;
+   - otro `responseCode` → `Rejected`.
+4. `refund()`: la anulación se hace **en la máquina** (`refund(operationNumber)` desde la pantalla). El servidor lanza `LogicException` hasta que exista ese flujo.
 
-## Decisión pendiente (docs/adr/0004)
-**El resultado llega desde el navegador, y el navegador no es de confianza.** A diferencia de Webpay, el servidor no puede preguntarle a Transbank si el cobro existe. Antes de implementar hay que decidir cómo se respalda un "aprobado":
-- conciliación con el reporte de ventas o liquidación de Transbank, que marca diferencias;
-- y quién puede registrar un cobro (permiso de cajero y auditoría de cada intento).
+## Reglas
+- Para auditoría se guardan los campos de la venta **sin** `last4Digits` ni `accountNumber`, y con `verified_by_provider: false`.
+- La fecha de la máquina (`realDate`, hora de Chile) se guarda en UTC.
 
-**Tests obligatorios:** camino feliz, rechazo, timeout del agente, agente no instalado o apagado, paciente que no termina (expira), doble envío del mismo cobro, resultado sin código de autorización.
+## Pendiente (docs/adr/0004)
+- **La respuesta viene del navegador y Transbank no la confirma.** Hay que definir la conciliación con el reporte de ventas de Transbank, los permisos para registrar cobros y la auditoría.
+- **Verificar con una máquina real:**
+  - el largo máximo del `ticket` (melisa_prod manda `"0"`; nuestras órdenes tienen hasta 26 caracteres);
+  - los nombres exactos de los campos de la respuesta;
+  - los códigos de error (melisa_prod trata 1, 14 y 18 como tarjeta, 3 como conexión, 7 y 22 como fallida).
+- La pantalla de caja (Stimulus + librería JS de Transbank vía importmap; dependencia nueva).
+
+## Tests
+`tests/Unit/Integration/Payments/Adapter/TransbankPos/`: aprobado, rechazado, sin respuesta, sin código de autorización, monto distinto, ticket de otra venta, respuesta repetida y que no se guarden datos de tarjeta.

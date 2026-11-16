@@ -28,6 +28,9 @@ test: ## Corre todos los tests
 test-unit: ## Solo tests unitarios
 	$(PHP) bin/phpunit --testsuite unit
 
+test-external: ## Tests contra ambientes de prueba reales de proveedores (internet)
+	$(PHP) bin/phpunit --group external
+
 stan: ## PHPStan nivel max
 	$(PHP) php bin/console cache:warmup -q
 	$(PHP) vendor/bin/phpstan analyse --memory-limit=1G --no-progress
@@ -73,4 +76,4 @@ runner-detener: ## Detiene el runner (queda registrado)
 runner-quitar: ## Da de baja el runner en GitHub y lo borra de este equipo
 	bash scripts/runner/runner.sh quitar
 
-.PHONY: help up down sh install dev test test-unit stan deptrac cs cs-fix lint rules ci-rapida check hooks runner runner-logs runner-detener runner-quitar
+.PHONY: help up down sh install dev test test-unit test-external stan deptrac cs cs-fix lint rules ci-rapida check hooks runner runner-logs runner-detener runner-quitar

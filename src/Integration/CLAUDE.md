@@ -58,6 +58,8 @@ src/Integration/
 - Qué proveedores tiene activos cada centro y sus credenciales se guardan en la base del tenant.
 - Las credenciales van cifradas. Nunca en `.env`, nunca en logs.
 - Un proveedor no activo para el tenant no puede usarse aunque su adaptador exista. `GatewayRegistry` lo hace cumplir con `ActiveProvidersInterface`. Mientras no exista la configuración por tenant, `NoActiveProviders` deja todos inactivos.
+- Los adaptadores piden sus credenciales a `Contract/ProviderCredentialsInterface`. En prod, `NoProviderCredentials` no entrega ninguna hasta que exista la configuración por tenant. En dev y test, `SandboxProviderCredentials` entrega las **públicas** de los ambientes de prueba (`config/services.yaml`).
+- Pruebas contra ambientes reales de proveedores: grupo `external`, con `make test-external`. No corren en `make check` ni en la CI.
 
 ## Máquina de estados (Symfony Workflow)
 `payment_attempt` en `config/packages/workflow.yaml`, sobre `Domain/PaymentAttempt`:

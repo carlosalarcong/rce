@@ -27,3 +27,19 @@ services:
         class: Redis
         factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
         arguments: ['%env(REDIS_URL)%']
+
+# Credenciales de proveedores: en dev y test, las públicas de sus ambientes de
+# prueba. En prod, ninguna (NoProviderCredentials) hasta la configuración por tenant.
+when@dev:
+    services:
+        App\Integration\Payments\Contract\ProviderCredentialsInterface:
+            alias: App\Integration\Payments\Infrastructure\Configuration\SandboxProviderCredentials
+
+when@test:
+    services:
+        App\Integration\Payments\Contract\ProviderCredentialsInterface:
+            alias: App\Integration\Payments\Infrastructure\Configuration\SandboxProviderCredentials
+        # Público solo en test: todavía nadie lo usa y Symfony lo eliminaría del contenedor.
+        App\Integration\Payments\Application\GatewayRegistry:
+            autowire: true
+            public: true

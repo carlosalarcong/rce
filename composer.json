@@ -26,7 +26,8 @@
         "symfony/ux-live-component": "^3.7",
         "symfony/ux-turbo": "^3.7",
         "symfony/workflow": "7.4.*",
-        "symfony/yaml": "7.4.*"
+        "symfony/yaml": "7.4.*",
+        "transbank/transbank-sdk": "^5.1"
     },
     "require-dev": {
         "deptrac/deptrac": "^4.7",
