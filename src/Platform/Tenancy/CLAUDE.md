@@ -7,6 +7,7 @@ Registro de tenants (centros de salud) y conexión a la base de cada uno, sobre 
 - El registro guarda host, puerto, usuario y nombre de la base. **Nunca la clave**: la pone `Infrastructure/Hakam/TenantDbPassword` desde `TENANT_DB_PASSWORD` (Secret Manager en GCP). Ver `docs/adr/0003`. `make rules` lo verifica.
 - Los decoradores de `Infrastructure/Hakam/` envuelven los puertos de Hakam: no reemplazarlos ni saltárselos.
 - La conexión de arranque del EM de tenant apunta a una base inexistente (`rce_no_tenant`) para que nada escriba en Main por accidente.
+- `Application/ActiveTenantInterface`: a qué tenant está conectado el proceso y cómo cambiarlo, para código fuera de una petición de usuario (cola, comandos). `Application/TenantDirectoryInterface`: lista de tenants registrados. No deciden quién puede entrar a un tenant: eso lo hace quien llama.
 - Las entidades de tenant de cada módulo se registran en `doctrine.yaml` (`entity_managers.tenant.mappings`). Ver `docs/adr/0002`.
 - **Pregunta antes de cambiar** `config/packages/hakam_multi_tenancy.yaml` o `doctrine.yaml`.
 - Comandos de Hakam: `tenant:database:create --all` (no usar `--dbid`, ver ADR 0003), `tenant:migrations:diff <subdominio>`, `tenant:migrations:migrate init|migrate`, `tenant:fixtures:load`.

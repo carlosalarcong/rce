@@ -39,5 +39,8 @@ hakam_multi_tenancy:
         excluded_paths:
             - /_profiler
             - /_wdt
+            # Tareas de la cola (Cloud Tasks / simulador): el tenant viene en la URL
+            # firmada y lo conecta ProcessOutboxMessage, no el subdominio.
+            - /_tasks
         options:
             base_domain: '%env(TENANT_BASE_DOMAIN)%'

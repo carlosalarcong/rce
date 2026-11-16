@@ -27,11 +27,12 @@
   - Las credenciales llegan por `ProviderCredentialsInterface`.
   - **IMED** (`ImedGateway`, SOAP) queda implementado e inactivo, construido a partir de melisa_prod (no del kit oficial). El contrato de bonos pasa a iniciar → ventana del proveedor → consultar → anular. Antes de activarlo hay que validarlo con el kit de IMED.
   - Klap espera su documentación o credenciales de prueba.
+- **2026-11-16:** cola de encargos con outbox por tenant y Google Cloud Tasks (`docs/adr/0006`).
 
 ## Pendientes (resolver antes del primer cobro real)
-1. **Outbox por tenant.** Messenger usa `doctrine://default` (Main). La regla de guardar el `PaymentAttempt` y el mensaje en la misma transacción obliga a que el outbox viva en la **base del tenant**, y a que el worker cambie al tenant correcto (`SwitchDbEvent`) antes de procesar cada mensaje. Va con su propia ADR.
-2. **Reintentos:** `retry_strategy` por transporte con inmediato, +1 min y +5 min. El "inmediato" no sale con el multiplicador estándar; probablemente requiere una estrategia propia.
-3. **`failure_transport`, alertas y visor de mensajes** (`Integration/Messaging`).
+1. ~~**Outbox por tenant.**~~ Resuelto en `docs/adr/0006`: bandeja `outbox_message` en cada tenant y Google Cloud Tasks (simulador en local).
+2. ~~**Reintentos.**~~ Resuelto en `docs/adr/0006`: los decide el RCE (al tiro, +1 min, +5 min).
+3. **Visor de mensajes y alertas** (`Integration/Messaging`): los fallidos ya quedan en `outbox_message` (`status = failed`) con log `critical`; falta la pantalla para listarlos y reprocesarlos.
 4. **Configuración de proveedores por tenant:** tabla en la base del tenant (migración de tenant) con credenciales cifradas (sodium) y la clave de cifrado en Secret Manager. Reemplaza `NoActiveProviders`.
 5. **Mapeo y tabla de `PaymentAttempt`** (XML en `Infrastructure/`, migración de tenant) e idempotencia única por `idempotency_key`.
 6. **Auditoría de cada cambio de estado:** quién o qué lo causó, cuándo y la respuesta del proveedor. Depende de `Platform/Audit`, que todavía no existe.

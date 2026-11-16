@@ -35,6 +35,15 @@ when@dev:
         App\Integration\Payments\Contract\ProviderCredentialsInterface:
             alias: App\Integration\Payments\Infrastructure\Configuration\SandboxProviderCredentials
 
+# Cola de encargos en GCP: Cloud Tasks toca el timbre y firma con OIDC.
+# En dev y test: simulador local (LocalTaskQueue + contenedor "tasks") y token compartido.
+when@prod:
+    services:
+        App\Integration\Messaging\Application\TaskQueueInterface:
+            alias: App\Integration\Messaging\Infrastructure\Tasks\CloudTasksQueue
+        App\Integration\Messaging\Application\TaskRequestVerifierInterface:
+            alias: App\Integration\Messaging\Infrastructure\Tasks\GoogleOidcTaskVerifier
+
 when@test:
     services:
         App\Integration\Payments\Contract\ProviderCredentialsInterface:

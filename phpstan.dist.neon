@@ -14,6 +14,9 @@ parameters:
         - public/
         - src/
         - tests/
+    # Las migraciones no se autocargan, pero los tests de integración usan la de la bandeja.
+    scanDirectories:
+        - migrations/
     excludePaths:
         - config/reference.php
     symfony:

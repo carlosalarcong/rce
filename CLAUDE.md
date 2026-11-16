@@ -14,7 +14,7 @@ Objetivo de producto: **rápido, simple y confiable**. Cada pantalla debe cargar
 - PHP 8.5 · Symfony 7.4 LTS · PostgreSQL 18 · Docker (nginx + php-fpm) — ver `docs/adr/0001`
 - Multi-tenant: **hakam/multi-tenancy-bundle** (una base de datos por tenant)
 - Frontend: Twig + Symfony UX (Live Components, Turbo, Stimulus)
-- Cola: Symfony Messenger con patrón outbox
+- Cola: Symfony Messenger con outbox en la base de cada tenant y Google Cloud Tasks (simulador local en el contenedor `tasks`) — ver `docs/adr/0006`
 - FHIR: HAPI FHIR en contenedor aparte (no se programa en Java)
 - HL7 v2: OIE (fork gratis de Mirth), solo en Fase 5
 - Calidad: PHPUnit, PHPStan (nivel max), Deptrac (`deptrac.modules.yaml` y `deptrac.layers.yaml`), PHP CS Fixer. `make check` corre todo.

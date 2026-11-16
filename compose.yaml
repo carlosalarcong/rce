@@ -26,6 +26,23 @@ services:
     depends_on:
       - php
 
+  # Simulador de Cloud Tasks + Cloud Scheduler para la cola de encargos. En GCP no existe:
+  # lo hacen Cloud Tasks (llama a /_tasks/outbox/...) y Cloud Scheduler (llama a /_tasks/sweep cada minuto).
+  tasks:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: dev
+    command: ["php", "bin/console", "rce:tasks:local-runner"]
+    volumes:
+      - ./:/var/www/app
+    restart: unless-stopped
+    depends_on:
+      nginx:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
   database:
     image: postgres:18-alpine
     environment:
