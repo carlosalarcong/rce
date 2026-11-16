@@ -136,6 +136,23 @@ details > summary::-webkit-details-marker { display: none; }
 
 .pct { font-family: var(--font-mono); font-weight: 500; white-space: nowrap; color: var(--accent); font-variant-numeric: tabular-nums; }
 
+/* Diagramas */
+.diagram-box { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; }
+.diagram-box svg { display: block; min-width: 720px; width: 100%; height: auto; }
+.diagram-box figcaption { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 72ch; }
+.d-box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.d-accent { fill: var(--accent-soft); stroke: var(--accent); }
+.d-ok { stroke: var(--accent); }
+.d-down { fill: var(--no-soft); stroke: var(--no); stroke-width: 2; stroke-dasharray: 6 4; }
+.d-t { fill: var(--ink); font-family: var(--font-body); font-size: 14px; font-weight: 600; text-anchor: middle; }
+.d-s { fill: var(--muted); font-family: var(--font-body); font-size: 12px; text-anchor: middle; }
+.d-left { text-anchor: start; }
+.d-t-no { fill: var(--no); }
+.d-line { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.d-line-no { stroke: var(--no); stroke-dasharray: 5 4; }
+.d-head { fill: var(--muted); }
+.d-head-no { fill: var(--no); }
+
 /* Valkey */
 .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 
@@ -560,6 +577,79 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
         </tbody>
       </table>
     </div>
+    <figure class="diagram-box" aria-labelledby="cap-caidas">
+      <svg viewBox="0 0 920 520" role="img" aria-labelledby="titulo-caidas desc-caidas">
+        <title id="titulo-caidas">Qué pasa si se cae la base de una clínica</title>
+        <desc id="desc-caidas">Las clínicas y soporte entran por la misma aplicación RCE en Cloud Run. La aplicación usa la base Main y una base por clínica. Si la base de la clínica 1 falla, solo esa clínica se ve afectada; Cloud Monitoring avisa a soporte, el panel de soporte la muestra en rojo y se restaura desde su respaldo diario en Cloud Storage.</desc>
+        <defs>
+          <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="d-head"/></marker>
+          <marker id="flecha-alerta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="d-head-no"/></marker>
+        </defs>
+
+        <!-- Quién entra -->
+        <rect x="40" y="20" width="160" height="52" rx="8" class="d-box"/>
+        <text x="120" y="51" class="d-t">Clínica 1</text>
+        <rect x="230" y="20" width="160" height="52" rx="8" class="d-box"/>
+        <text x="310" y="51" class="d-t">Clínica 2 y 3</text>
+        <rect x="560" y="20" width="200" height="52" rx="8" class="d-box"/>
+        <text x="660" y="44" class="d-t">Soporte (tú)</text>
+        <text x="660" y="62" class="d-s">soporte.rce.cl</text>
+
+        <line x1="120" y1="72" x2="250" y2="134" class="d-line" marker-end="url(#flecha)"/>
+        <line x1="310" y1="72" x2="300" y2="134" class="d-line" marker-end="url(#flecha)"/>
+        <line x1="620" y1="72" x2="430" y2="134" class="d-line" marker-end="url(#flecha)"/>
+        <text x="200" y="104" class="d-s">app.rce.cl</text>
+
+        <!-- La aplicación -->
+        <rect x="190" y="136" width="300" height="70" rx="10" class="d-box d-accent"/>
+        <text x="340" y="164" class="d-t">RCE · una sola aplicación</text>
+        <text x="340" y="186" class="d-s">Cloud Run, varias copias</text>
+
+        <!-- Bases -->
+        <line x1="260" y1="206" x2="110" y2="270" class="d-line" marker-end="url(#flecha)"/>
+        <line x1="300" y1="206" x2="275" y2="270" class="d-line" marker-end="url(#flecha)"/>
+        <line x1="380" y1="206" x2="440" y2="270" class="d-line" marker-end="url(#flecha)"/>
+        <line x1="420" y1="206" x2="600" y2="270" class="d-line" marker-end="url(#flecha)"/>
+
+        <rect x="40" y="272" width="140" height="62" rx="8" class="d-box"/>
+        <text x="110" y="298" class="d-t">Base Main</text>
+        <text x="110" y="318" class="d-s">cuentas y clínicas</text>
+
+        <rect x="205" y="272" width="140" height="62" rx="8" class="d-box d-down"/>
+        <text x="275" y="298" class="d-t d-t-no">Base clínica 1</text>
+        <text x="275" y="318" class="d-s d-t-no">no responde</text>
+
+        <rect x="370" y="272" width="140" height="62" rx="8" class="d-box d-ok"/>
+        <text x="440" y="298" class="d-t">Base clínica 2</text>
+        <text x="440" y="318" class="d-s">sigue normal</text>
+
+        <rect x="535" y="272" width="140" height="62" rx="8" class="d-box d-ok"/>
+        <text x="605" y="298" class="d-t">Base clínica 3</text>
+        <text x="605" y="318" class="d-s">sigue normal</text>
+
+        <!-- Detección -->
+        <rect x="720" y="136" width="170" height="70" rx="10" class="d-box"/>
+        <text x="805" y="164" class="d-t">Cloud Monitoring</text>
+        <text x="805" y="186" class="d-s">alerta en minutos</text>
+        <path d="M345 303 H700 V206 H760" class="d-line d-line-no" marker-end="url(#flecha-alerta)" fill="none"/>
+        <line x1="790" y1="136" x2="720" y2="72" class="d-line d-line-no" marker-end="url(#flecha-alerta)"/>
+        <text x="772" y="100" class="d-s d-t-no">aviso</text>
+
+        <!-- Restauración -->
+        <rect x="205" y="410" width="250" height="62" rx="8" class="d-box"/>
+        <text x="330" y="436" class="d-t">Respaldo diario por clínica</text>
+        <text x="330" y="456" class="d-s">Cloud Storage</text>
+        <line x1="275" y1="410" x2="275" y2="336" class="d-line" marker-end="url(#flecha)"/>
+        <text x="282" y="378" class="d-s d-left">restaurar solo clínica 1</text>
+
+        <rect x="560" y="410" width="330" height="62" rx="8" class="d-box"/>
+        <text x="725" y="436" class="d-t">Panel de soporte</text>
+        <text x="725" y="456" class="d-s">clínica 1 en rojo · modo mantenimiento</text>
+        <line x1="660" y1="72" x2="760" y2="408" class="d-line" marker-end="url(#flecha)"/>
+      </svg>
+      <figcaption id="cap-caidas">Si falla la base de la clínica 1, solo esa clínica se detiene: la alerta llega a soporte, el panel la muestra en rojo con su aviso de mantenimiento y se restaura desde su respaldo, sin tocar a las demás.</figcaption>
+    </figure>
+
     <div class="rule"><strong>Planificado (antes de la primera clínica real):</strong> estado de las clínicas en verde o rojo en el panel de soporte, alertas automáticas, errores con el nombre de la clínica, respaldo diario por clínica, modo mantenimiento por clínica y manuales paso a paso para restaurar o volver a migrar solo esa clínica.</div>
   </section>
 
