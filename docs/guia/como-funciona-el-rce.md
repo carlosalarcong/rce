@@ -191,3 +191,22 @@ Son dos servicios de Google que **llaman directo al RCE**. No se llaman entre el
 | Timbre de la cola | contenedor `tasks` | Cloud Tasks |
 | Despertador de la barrida | contenedor `tasks` | Cloud Scheduler |
 | Pruebas antes de subir | `make check` y el hook `pre-push` | la CI en el runner propio |
+
+---
+
+## 6. Avance del proyecto (al 16-11-2026)
+
+El whiteboard [Mapa de módulos RCE](https://claude.ai/artifact/SMhQcqUSiPsa6q5dSFwuPu) muestra en la esquina superior derecha de cada caja el **avance real en el código**: lo que existe, con pruebas y en `develop`. No cuenta horas ni planes. Hay una copia dentro del proyecto: `docs/guia/mapa-de-modulos.md` (texto) y `docs/guia/mapa-de-modulos.json` (completo).
+
+| Caja | Avance | Qué hay / qué falta |
+|---|---|---|
+| Cola con reintentos | 80 % | Hecho: bandeja por clínica, Cloud Tasks y simulador, reintentos, barrida, pruebas en vivo. Falta: limpieza de encargos viejos y usarla en los cobros reales |
+| Multi-sede | 25 % | Hecho: una base por clínica (Hakam), clave en Secret Manager, registro de clínicas. Falta: sucursales y cambio de clínica con un usuario (ADR 0005, propuesta) |
+| Caja ambulatoria | 20 % | Hecho: adaptadores de Webpay, POS de Transbank (servidor) e IMED, registro de proveedores, fusible, candado y estados del cobro. Falta: la caja misma, la tabla de intentos de pago, la página de retorno y la configuración por clínica |
+| Seguridad | 10 % | Hecho: claves en Secret Manager, credenciales que nunca se imprimen, llamadas internas firmadas. Falta: inicio de sesión, cifrado de campos y adjuntos |
+| Visor de mensajes | 10 % | Hecho: los fallidos quedan registrados con alerta. Falta: la pantalla para verlos y reprocesarlos |
+| Usuarios y roles | 5 % | Hecho: ADR 0005 (propuesta). Falta: todo el código |
+| Atención (ambulatorio) | 5 % | Hecho: maqueta y spec de navegación por áreas. Falta: agenda, recepción y telemedicina |
+| Todo lo demás | 0 % | Núcleo clínico, auditoría, FHIR, reportes, OIE, hospitalario y capa pública: aún sin código |
+
+**Cómo actualizarlo:** cuando un bloque avance, se cambia su porcentaje en el whiteboard, en esta tabla y en `mapa-de-modulos.md`.

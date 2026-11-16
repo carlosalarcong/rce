@@ -134,6 +134,8 @@ details > summary::-webkit-details-marker { display: none; }
 .chip.yes { background: var(--accent-soft); color: var(--accent); }
 .chip.no { background: var(--no-soft); color: var(--no); }
 
+.pct { font-family: var(--font-mono); font-weight: 500; white-space: nowrap; color: var(--accent); font-variant-numeric: tabular-nums; }
+
 /* Valkey */
 .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 
@@ -162,6 +164,7 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
       <a href="#cola">Cola y Google</a>
       <a href="#valkey">Valkey</a>
       <a href="#donde">Qué corre dónde</a>
+      <a href="#avance">Avance</a>
     </nav>
   </header>
 
@@ -491,6 +494,29 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
           <tr><td>Timbre de la cola</td><td><code>tasks</code></td><td>Cloud Tasks</td></tr>
           <tr><td>Despertador de la barrida</td><td><code>tasks</code></td><td>Cloud Scheduler</td></tr>
           <tr><td>Pruebas antes de subir</td><td><code>make check</code> y el hook pre-push</td><td>CI en el runner propio</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="avance">
+    <div class="sec-head">
+      <span class="path">docs/guia/mapa-de-modulos.md · whiteboard</span>
+      <h2>Avance del proyecto</h2>
+    </div>
+    <p>Avance real en el código al 16-11-2026: lo que existe, con pruebas y en <code>develop</code>. No cuenta horas ni planes. El mismo número está en la esquina de cada caja del <a href="https://claude.ai/artifact/SMhQcqUSiPsa6q5dSFwuPu">mapa de módulos</a>.</p>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Caja</th><th>Avance</th><th>Qué hay / qué falta</th></tr></thead>
+        <tbody>
+          <tr><td>Cola con reintentos</td><td class="pct">80 %</td><td>Hecho: bandeja por clínica, Cloud Tasks y simulador, reintentos, barrida. Falta: limpieza de encargos viejos y usarla en los cobros reales.</td></tr>
+          <tr><td>Multi-sede</td><td class="pct">25 %</td><td>Hecho: una base por clínica, clave en Secret Manager. Falta: sucursales y cambio de clínica con un usuario (ADR 0005).</td></tr>
+          <tr><td>Caja ambulatoria</td><td class="pct">20 %</td><td>Hecho: adaptadores de Webpay, POS e IMED, registro de proveedores, fusible y candado. Falta: la caja, los intentos de pago, el retorno y la configuración por clínica.</td></tr>
+          <tr><td>Seguridad</td><td class="pct">10 %</td><td>Hecho: claves en Secret Manager, llamadas internas firmadas. Falta: inicio de sesión y cifrado de campos.</td></tr>
+          <tr><td>Visor de mensajes</td><td class="pct">10 %</td><td>Hecho: los fallidos quedan registrados con alerta. Falta: la pantalla.</td></tr>
+          <tr><td>Usuarios y roles</td><td class="pct">5 %</td><td>Hecho: ADR 0005 (propuesta). Falta: el código.</td></tr>
+          <tr><td>Atención ambulatoria</td><td class="pct">5 %</td><td>Hecho: maqueta y spec de navegación. Falta: agenda, recepción, telemedicina.</td></tr>
+          <tr><td>Todo lo demás</td><td class="pct">0 %</td><td>Núcleo clínico, auditoría, FHIR, reportes, OIE, hospitalario y capa pública.</td></tr>
         </tbody>
       </table>
     </div>
