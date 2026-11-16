@@ -1,86 +1,137 @@
-# 0005 — Inicio de sesión propio, un usuario en varias clínicas y multi-sede
+# 0005 — Identidad central (rce-central), un usuario en varias clínicas y multi-sede
 
-- **Estado:** propuesta (requiere confirmación: toca `Platform/Security`, `Platform/Identity`, la configuración de Hakam, migraciones y el `CLAUDE.md` raíz)
+- **Estado:** aceptada (2026-11-16, Carlos). Cada paso de implementación se planifica y confirma aparte, porque toca `Platform/Security`, `Platform/Identity`, la configuración de Hakam, migraciones y el `CLAUDE.md` raíz.
 - **Fecha:** 2026-11-16
+- **Referencia:** el modelo de Nexia Core (`~/Developer/nexia/docs`, contrato `contratos/CON-01-integracion-de-productos.md`) y cómo lo consume Acredita360 (sus D-20 y D-21). Se copia el diseño, no la instancia: **Nexia no tiene relación con el RCE**.
 
 ## Contexto
-- Un profesional puede trabajar en varias clínicas (tenants). Debe entrar **una vez** y cambiar de clínica sin volver a iniciar sesión (`docs/specs/navegacion-por-areas.md`, idea B).
-- Dentro de una clínica puede haber **varias sedes** (sucursales) y cada persona trabaja en una o más.
-- Hoy el `CLAUDE.md` dice que el tenant se resuelve **por subdominio** y que los usuarios del centro viven en la base del tenant. Con eso, cambiar de clínica obliga a volver a entrar: cada subdominio tiene su propia cookie y una cuenta distinta por base.
-- El RCE tiene **su propio inicio de sesión**. No depende de ningún proveedor de identidad externo.
-- Acredita360 resolvió el mismo problema (su D-21): un solo host, la clínica activa guardada en la sesión y el usuario atado a esa clínica. Se toma esa mecánica, no su proveedor de identidad.
-- La página de retorno de Webpay e IMED necesita saber a qué clínica pertenece un retorno (ADR 0004, pendiente 7).
+- Un profesional puede trabajar en varias clínicas. Debe entrar **una vez** y cambiar de clínica sin volver a iniciar sesión (`docs/specs/navegacion-por-areas.md`, idea B).
+- Dentro de una clínica puede haber **varias sedes**.
+- Las cuentas se crean en un proyecto central propio, **rce-central**, al estilo de Nexia Core (decisión de Carlos).
+- El segundo factor debe ser **configurable** desde un módulo de configuración (decisión de Carlos).
+- Dominio provisorio: **`app.rce.cl`** (todavía no hay dominio comprado).
+- Hoy el `CLAUDE.md` dice que el tenant se resuelve por subdominio y que los usuarios viven en la base de cada clínica. Eso cambia.
 
 ## Decisión propuesta
 
-### 1. Identidad única en Main, permisos en cada clínica
-- **Main** guarda a la persona y a qué clínicas puede entrar:
-  - `user_account`: identificador UUID, correo (único), hash de contraseña (argon2id), estado y segundo factor;
-  - `tenant_membership`: persona, clínica y estado (activa o suspendida).
-- **La base de cada clínica** guarda qué puede hacer la persona ahí: su perfil (médico, enfermera, cajera, administrativo), sus roles y permisos, y las sedes donde trabaja. Se enlaza por el UUID de `user_account`, nunca por un id entero (los ids enteros se repiten entre bases).
-- Separación: **quién es y a qué clínicas entra** se decide en Main; **qué puede hacer adentro** se decide en la base de la clínica.
-- Usuarios de soporte y superadministración (plataforma): en Main, con firewall propio (`/plataforma`) y segundo factor obligatorio.
+### 1. Dos proyectos, dos responsabilidades
+| | **rce-central** (proyecto aparte) | **RCE** (este proyecto) |
+|---|---|---|
+| Responde | **Quién es** la persona y **a qué clínicas puede entrar** | **Qué puede hacer** adentro |
+| Guarda | Personas, cuentas (contraseña y segundo factor), clínicas, membresías, administradores de clínica | Usuario funcional, perfiles, roles, permisos, sedes, todo lo clínico |
+| Base de datos | Su propio PostgreSQL, separado de las clínicas, sin Hakam | Main (registro técnico de clínicas) + una base por clínica |
 
-### 2. Un solo host; la clínica activa sale de la sesión
-- Todas las clínicas entran por un mismo host (por ejemplo, `app.<dominio>.cl`). Ya no hay subdominio por clínica.
+- **rce-central** es una aplicación Symfony aparte, con su propio repositorio y despliegue (Cloud Run + Cloud SQL + Cloud Tasks).
+- El RCE **no guarda contraseñas ni segundos factores**.
+- Identificadores entre los dos: UUID externos (`central_person_id`, `central_clinic_id`), sin llaves foráneas entre bases. **El correo nunca identifica.**
+
+### 2. Hosts
+| Host | Qué es |
+|---|---|
+| `id.rce.cl` | rce-central: inicio de sesión (emisor OIDC) |
+| `central.rce.cl` | rce-central: administración (soporte) y API para el RCE |
+| `app.rce.cl` | El RCE. **Una sola dirección para todas las clínicas** |
+
+En desarrollo: `id.rce.localhost`, `central.rce.localhost` y `app.rce.localhost`.
+
+### 3. Inicio de sesión (OIDC)
+- **Flujo:** OIDC Authorization Code + PKCE (S256), con `state` y `nonce`. El RCE se autentica ante rce-central con `private_key_jwt`: firma con su llave y publica su JWKS. No hay secretos compartidos.
+- **`id_token`:** `sub` = la persona en rce-central, `sid`, `email` (solo informativo). Si la persona usó segundo factor, también `acr`/`amr`.
+- **Al entrar:**
+  1. El RCE pregunta a rce-central en qué clínicas puede entrar la persona (`/contexts`).
+  2. Con una sola clínica, entra directo. Con varias, la persona elige; nunca se elige la primera en silencio.
+  3. Antes de fijar la clínica, el RCE la **valida** (`/contexts/validate`). La respuesta trae `valid_until`, y el RCE revalida cada vez que ese plazo vence (15 min, plazo que fija rce-central).
+  4. Si rce-central no responde, el RCE bloquea con un aviso, sin desloguear.
 - **Clínica activa (TenantContext):**
-  - Se guarda en la sesión **solo** después de verificar en Main que la persona tiene membresía activa en esa clínica.
-  - Ningún parámetro de la petición (query, cuerpo, cabecera, host) la cambia.
-  - Un listener de `kernel.request` que corre **antes del firewall** lee la clínica de la sesión y despacha `SwitchDbEvent`.
-  - El resolver por subdominio de Hakam se apaga (`resolver.enabled: false`).
-- **El usuario de seguridad va atado a la clínica.** Lleva serializada la clínica para la que se cargaron sus roles. Si no coincide con la de la sesión, `refreshUser` lo rechaza y la sesión se cierra, sin ventana en que otro código actúe con roles de otra clínica.
-- **Cambio de clínica:** un menú en la cabecera (arriba a la derecha). El cambio:
-  - verifica la membresía en Main;
-  - regenera el id de sesión;
-  - recarga roles y sedes desde la nueva base;
-  - guarda borradores (spec, idea A);
-  - abre la última área usada en esa clínica.
-- **Al entrar:** con una sola clínica, se entra directo. Con varias, la persona elige (nunca se elige la primera en silencio). Después se recuerda la última.
-- **Por qué un solo host:**
-  - se cambia de clínica sin volver a entrar;
-  - no se puede averiguar qué clínicas son clientes probando subdominios;
-  - un solo certificado y una sola configuración de nginx.
-- **Lo que se pierde, y cómo se compensa:** el navegador ya no separa las cookies por clínica. El aislamiento pasa a depender del código (TenantContext, usuario atado a la clínica, tests de aislamiento). Más adelante se puede sumar una segunda barrera en PostgreSQL (RLS).
+  - Va en la sesión, solo después de validarla. Ningún parámetro de la petición la cambia.
+  - Un listener antes del firewall despacha `SwitchDbEvent`. El resolver por subdominio de Hakam se apaga.
+  - El usuario de seguridad va atado a la clínica: `refreshUser` lo compara con la sesión y, si no coinciden, cierra la sesión.
+- **Cambio de clínica:** desde el menú de arriba a la derecha. Valida en rce-central, regenera la sesión, recarga roles y sedes, guarda borradores y abre la última área usada.
+- **Salir:**
+  - "Salir" cierra el RCE, con un POST protegido con CSRF.
+  - "Cerrar sesión en todas partes" cierra también rce-central.
+  - Cuando termina la sesión central, rce-central avisa al RCE (`session_ended`) y el RCE cierra las sesiones con ese `sid`.
+- **Inactividad:** cierre configurable, pensado para computadores compartidos.
 
-### 3. Sedes (multi-sede dentro de una clínica)
+### 4. Segundo factor configurable
+- **Vive en rce-central.** El RCE no implementa un segundo factor propio.
+- **Mecanismo:** app autenticadora (TOTP), con códigos de respaldo.
+- **Obligatorio siempre** para soporte y administradores de rce-central.
+- **Para el resto lo decide cada clínica** en el **módulo de configuración** del RCE (`Configuración → Seguridad`): a qué perfiles se les exige (por ejemplo, médico y enfermera sí; recepción no). La política solo puede endurecer lo que rce-central exige como mínimo.
+- **Cómo se exige (step-up):**
+  1. Al validar la clínica, el RCE revisa si el perfil de la persona lo requiere y si el `id_token` trae segundo factor.
+  2. Si falta, la manda a rce-central con `acr_values=…mfa`.
+  3. La persona ingresa el código y vuelve.
+
+  Un solo intento, sin bucles. Cada cambio de esta política queda en la auditoría.
+
+### 5. Quién crea las cuentas
+- **Soporte, en `central.rce.cl`:** crea las clínicas y elige su **primer administrador**.
+- **El administrador de cada clínica, desde el RCE** (`Configuración → Usuarios`):
+  1. Invita a una persona por correo. El RCE se lo pide a rce-central por API, y rce-central crea o reutiliza la persona y la cuenta, crea la membresía pendiente y envía el correo de activación. La respuesta no revela si la persona ya existía.
+  2. El RCE crea el usuario funcional con su perfil y sus sedes.
+  3. El RCE confirma la membresía. Así, una persona nunca tiene acceso sin perfil.
+- **Desactivar** a alguien en la clínica desactiva la membresía en rce-central. Sus registros en la ficha **no se borran**: el autor queda identificado.
+
+### 6. Nueva clínica (aprovisionamiento)
+- **rce-central orquesta y el RCE ejecuta:**
+  1. Soporte crea la clínica en rce-central.
+  2. rce-central pide al RCE crearla (`POST /central/v1/provisioning`, con llave de idempotencia).
+  3. El RCE crea la base de la clínica con Hakam, corre las migraciones de clínica y crea al primer administrador con rol de administrador. Lo hace en la cola de encargos (ADR 0006).
+  4. El RCE reporta el resultado y rce-central activa la clínica.
+- **Nombre de la base:** `rce_<código>`. El código es inmutable.
+- **Credenciales de la base:** las guarda solo el RCE (Secret Manager, ADR 0003). rce-central no tiene ningún secreto de las clínicas.
+
+### 7. Sedes (multi-sede dentro de una clínica)
 - Las sedes son datos de la base de la clínica (`site`: nombre, dirección, códigos externos como el lugar de atención de IMED).
-- Cada persona tiene asignadas una o más sedes. Si tiene varias, la sede activa también va en la sesión y se elige desde el mismo menú de la cabecera.
-- Agenda, caja, camas y reportes se filtran por sede. La ficha clínica del paciente es **una sola por clínica**, no por sede.
+- Cada persona tiene una o más sedes asignadas en el RCE. La sede activa va en la sesión y se elige desde el mismo menú.
+- Agenda, caja, camas y reportes se filtran por sede. La ficha clínica es **una sola por clínica**.
 
-### 4. Inicio de sesión propio
-- Correo y contraseña (argon2id), con:
-  - límite de intentos (`symfony/rate-limiter`, dependencia nueva);
-  - recuperación de contraseña por correo con token de un solo uso;
-  - id de sesión regenerado al entrar.
-- **Segundo factor (TOTP):** obligatorio para plataforma; para perfiles clínicos se recomienda obligatorio por la Ley 21.719 (decidir en su propia tarea).
-- **Cierre por inactividad:** configurable; pensado para computadores compartidos en box y recepción.
-- "Salir" es un POST con CSRF.
+### 8. Avisos de rce-central al RCE
+- Llegan a `POST https://app.rce.cl/central/v1/events`, firmados por rce-central.
+- **Eventos:** persona suspendida, clínica desactivada, membresía desactivada y sesión terminada.
+- Significan "vuelve a preguntar" (el RCE vence el contexto y revalida), salvo "sesión terminada", que cierra la sesión.
+- Idempotentes por `event_id`.
+- **Riesgo aceptado:** si un aviso se pierde, una persona suspendida puede seguir operando hasta 15 min, hasta la siguiente revalidación.
 
-### 5. Página de retorno de Webpay, IMED y otros
-- Con un solo host, **el navegador no manda la cookie de sesión** cuando Webpay o IMED devuelven al paciente con un POST desde otro sitio (`SameSite=Lax`). La clínica no puede salir de la sesión en ese momento.
-- La URL de retorno lleva un **identificador público opaco de la clínica** (UUID aleatorio en `tenant_db_config`, no el nombre ni un id correlativo), por ejemplo `/retorno/webpay/{tenantRef}`. Con eso se conecta la base correcta.
-- El retorno **solo registra que llegó**. El estado real se confirma con el proveedor (`confirm()`) en el worker (`docs/adr/0004`, cola). Por eso un `tenantRef` adivinado o un retorno falso no producen un pago confirmado.
-- Ruta pública, sin CSRF (la llama el proveedor), con límite de intentos y auditoría de cada llamada.
+### 9. Cómo nace rce-central: copia de Nexia Core
+**Decisión de Carlos (2026-11-16):** rce-central parte de una **copia del código de Nexia Core**, en un repositorio nuevo y privado, con base, dominio y llaves propios, y **sin ninguna conexión con Nexia**.
+
+Al copiarlo:
+- se renombra todo lo que diga Nexia (hosts, rutas `/nexia/v1/...` → `/central/v1/...`, prefijos de claims y `acr`);
+- se simplifica el concepto de "varios productos": el RCE es el único;
+- se programa el segundo factor (en Nexia está diseñado, no implementado);
+- a partir de ahí, cada proyecto sigue su propio camino.
 
 ## Consecuencias
-- Cambian el `CLAUDE.md` raíz ("el tenant se resuelve por subdominio" y "usuarios del centro en la base del tenant"), `config/packages/hakam_multi_tenancy.yaml` (resolver apagado), nginx (sin comodín de subdominio) y `.env` (`TENANT_BASE_DOMAIN` desaparece y aparece el host único).
-- Migraciones:
-  - en Main: `user_account`, `tenant_membership` y el `public_ref` en `tenant_db_config`;
-  - en cada clínica: perfil, roles, permisos, sedes y asignaciones.
+- Cambian:
+  - el `CLAUDE.md` raíz ("el tenant se resuelve por subdominio" y "usuarios del centro en la base del tenant");
+  - `config/packages/hakam_multi_tenancy.yaml` (resolver apagado);
+  - nginx (host único, sin comodín);
+  - `.env` (`TENANT_BASE_DOMAIN` desaparece y aparece el host del RCE y de rce-central).
+- **Migraciones:**
+  - en Main: el `central_clinic_id` en `tenant_db_config`;
+  - en cada clínica: usuario funcional, perfiles, roles, permisos, sedes, asignaciones y política de segundo factor.
+- **En el RCE se construye** (en `Platform/Identity` y `Platform/Security`):
+  - el cliente OIDC;
+  - el TenantContext;
+  - la validación y revalidación de contextos;
+  - la recepción de avisos y aprovisionamiento;
+  - la invitación de personas;
+  - el módulo de configuración (seguridad y usuarios).
 - **Tests de aislamiento obligatorios:**
   - la clínica no cambia con ningún parámetro de la petición;
-  - un usuario cargado para la clínica A con la sesión cambiada a B cierra la sesión;
+  - un usuario de la clínica A con la sesión cambiada a B cierra la sesión;
   - sin TenantContext no se llega a ninguna ruta de clínica;
   - el cambio de clínica sin membresía se rechaza;
-  - la sesión de plataforma no se mezcla con la de clínica.
-
-## Preguntas abiertas (para Carlos)
-1. ¿Segundo factor obligatorio para perfiles clínicos desde el inicio, o solo para plataforma?
-2. ¿Quién crea las cuentas: el administrador de cada clínica (invitación por correo) o soporte desde plataforma?
-3. Nombre del host único (por ejemplo, `app.<dominio>.cl`).
+  - una persona sin el segundo factor exigido no entra.
+- **En local**, rce-central corre como otro proyecto en Docker con su propio `compose.yaml`, unido al RCE por una red compartida.
 
 ## Orden de implementación (cada paso con su plan y confirmación)
-1. Identidad en Main e inicio de sesión (sin clínica todavía).
-2. Membresías, TenantContext, apagado del resolver por subdominio y tests de aislamiento.
-3. Perfiles, roles y sedes en la base de la clínica, y el menú de cambio de clínica y sede.
-4. `public_ref` y la página de retorno de proveedores (después de la cola).
+1. Crear el repositorio de rce-central a partir de Nexia Core (sección 9).
+2. rce-central mínimo: personas, cuentas, clínicas, membresías, OIDC y contextos.
+3. RCE: inicio de sesión OIDC, TenantContext, resolver por subdominio apagado y tests de aislamiento.
+4. RCE: usuario funcional, perfiles, roles, permisos y sedes, con el menú de cambio de clínica y sede.
+5. Invitación de personas y aprovisionamiento de clínicas.
+6. Segundo factor en rce-central y su política en el módulo de configuración del RCE.
+7. Avisos firmados de rce-central y página de retorno de proveedores (ADR 0004).
