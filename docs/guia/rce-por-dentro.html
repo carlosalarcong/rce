@@ -1,0 +1,394 @@
+<title>RCE por dentro</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: plano técnico de una sola columna (máx. 980px), secciones como láminas con encabezado de código */
+:root {
+  --bg: #f5f7f8;
+  --surface: #ffffff;
+  --ink: #12212b;
+  --muted: #4c5f6b;
+  --line: #d5dde2;
+  --accent: #0b6e68;
+  --accent-soft: #e2f1ef;
+  --warn: #8a5a00;
+  --warn-soft: #fbf0d9;
+  --off: #5b6670;
+  --off-soft: #eceff1;
+  --code-bg: #eef2f4;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f171c; --surface: #16222a; --ink: #e3ebef; --muted: #9db0bb; --line: #2a3a44;
+    --accent: #4fc2b8; --accent-soft: #143633; --warn: #f0c46b; --warn-soft: #3a2e14;
+    --off: #a7b3bb; --off-soft: #222f37; --code-bg: #1c2a33; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f171c; --surface: #16222a; --ink: #e3ebef; --muted: #9db0bb; --line: #2a3a44;
+  --accent: #4fc2b8; --accent-soft: #143633; --warn: #f0c46b; --warn-soft: #3a2e14;
+  --off: #a7b3bb; --off-soft: #222f37; --code-bg: #1c2a33; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 40px 64px; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 42px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 600; }
+h3 { font-size: 18px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; }
+a { color: var(--accent); }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lead { font-size: 18px; color: var(--muted); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+nav.toc a { font-size: 14px; text-decoration: none; color: var(--ink); border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; }
+nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+.sec-head { display: flex; flex-direction: column; gap: 6px; border-top: 2px solid var(--ink); padding-top: 14px; }
+.sec-head .path { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* Módulos */
+.modules { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: 16px; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.mod { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mod .name { font-family: var(--font-mono); font-weight: 500; font-size: 14px; }
+.mod .what { font-size: 13px; color: var(--muted); }
+.mod.base { border-color: var(--accent); background: var(--accent-soft); }
+.arrow { text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.side { display: flex; flex-direction: column; gap: 10px; }
+.side .mod { flex: 1; border-style: dashed; }
+.rule { background: var(--surface); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; }
+
+/* Capas */
+.layers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.onion { display: flex; flex-direction: column; gap: 8px; }
+.layer { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.layer .lname { font-family: var(--font-mono); font-weight: 500; font-size: 14px; }
+.layer.domain { border-color: var(--accent); background: var(--accent-soft); }
+.layer small { display: block; color: var(--muted); font-size: 13px; }
+.uses { font-size: 12px; font-family: var(--font-mono); color: var(--accent); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+
+/* Árbol */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--muted); }
+.chip { display: inline-block; font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.03em; padding: 1px 8px; border-radius: 999px; white-space: nowrap; vertical-align: 1px; }
+.chip.code { background: var(--accent-soft); color: var(--accent); }
+.chip.note { background: var(--warn-soft); color: var(--warn); }
+.chip.empty { background: var(--off-soft); color: var(--off); }
+.tree { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; overflow-x: auto; }
+.tree ul { list-style: none; margin: 0; padding-left: 20px; border-left: 1px solid var(--line); }
+.tree > ul { padding-left: 0; border-left: 0; }
+.tree li { padding: 3px 0 3px 10px; font-family: var(--font-mono); font-size: 14px; white-space: nowrap; }
+.tree .d { font-weight: 500; }
+.tree .c { font-family: var(--font-body); color: var(--muted); font-size: 13px; margin-left: 8px; }
+details > summary { cursor: pointer; font-family: var(--font-mono); font-weight: 500; font-size: 14px; padding: 3px 0 3px 10px; list-style: none; white-space: nowrap; }
+details > summary::before { content: "+"; display: inline-block; width: 14px; color: var(--accent); }
+details[open] > summary::before { content: "−"; }
+details > summary::-webkit-details-marker { display: none; }
+
+/* Cola */
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card .tag { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+.card dl { margin: 0; display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 10px; font-size: 14px; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; min-width: 0; }
+.flow { display: flex; flex-direction: column; gap: 0; }
+.step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; }
+.step .num { display: flex; flex-direction: column; align-items: center; }
+.step .num span { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-family: var(--font-mono); font-size: 13px; font-weight: 500; display: grid; place-items: center; background: var(--bg); flex-shrink: 0; }
+.step .num::after { content: ""; flex: 1; width: 2px; background: var(--line); min-height: 14px; }
+.step:last-child .num::after { display: none; }
+.step .body { padding-bottom: 18px; display: flex; flex-direction: column; gap: 4px; }
+.who { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.who b { color: var(--ink); font-weight: 500; }
+.step.alt .num span { border-color: var(--warn); color: var(--warn); }
+.note-box { background: var(--warn-soft); color: var(--ink); border-radius: 8px; padding: 12px 16px; font-size: 15px; }
+
+/* Valkey */
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+
+footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+
+@media (max-width: 760px) {
+  .modules, .layers, .pair, .trio { grid-template-columns: minmax(0, 1fr); }
+  .row { grid-template-columns: minmax(0, 1fr); }
+  .layer { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .card dl { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Registro Clínico Electrónico · guía de arquitectura</span>
+    <h1>RCE por dentro</h1>
+    <p class="lead">Cómo está ordenado el código, qué hace cada carpeta y cómo funciona la cola de encargos con Google Cloud Tasks y Cloud Scheduler. En palabras simples.</p>
+    <nav class="toc" aria-label="Secciones">
+      <a href="#modulos">Módulos</a>
+      <a href="#capas">Capas DDD</a>
+      <a href="#deptrac">Deptrac</a>
+      <a href="#carpetas">Carpetas</a>
+      <a href="#cola">Cola y Google</a>
+      <a href="#valkey">Valkey</a>
+      <a href="#donde">Qué corre dónde</a>
+    </nav>
+  </header>
+
+  <section id="modulos">
+    <div class="sec-head">
+      <span class="path">src/</span>
+      <h2>Un monolito modular</h2>
+    </div>
+    <p>Es una sola aplicación dividida en módulos que no se mezclan, como los departamentos de una clínica: cada uno tiene su trabajo y se comunica con los demás solo por su ventanilla oficial.</p>
+    <div class="modules">
+      <div class="stack">
+        <div class="row">
+          <div class="mod"><span class="name">Ambulatory/</span><span class="what">Agenda, recepción, caja ambulatoria</span></div>
+          <div class="mod"><span class="name">Inpatient/</span><span class="what">Camas, urgencia, pabellón, enfermería</span></div>
+          <div class="mod"><span class="name">PublicSector/</span><span class="what">APS, REM, GES</span></div>
+        </div>
+        <div class="arrow">usan ↓</div>
+        <div class="mod"><span class="name">Clinical/</span><span class="what">Núcleo clínico compartido: paciente, atención, diagnóstico, receta</span></div>
+        <div class="arrow">usa ↓</div>
+        <div class="mod base"><span class="name">Platform/</span><span class="what">La base de todos: clínicas (tenants), usuarios, auditoría, seguridad</span></div>
+      </div>
+      <div class="side">
+        <div class="mod"><span class="name">Integration/</span><span class="what">El mundo exterior: Webpay, POS, IMED, cola de encargos, FHIR, HL7. Usa Clinical y Platform. La caja solo usa su menú (Contract y Application).</span></div>
+      </div>
+    </div>
+    <div class="rule"><strong>Regla de oro:</strong> las dependencias van solo hacia abajo. Clinical no sabe que existe la caja. Deptrac revisa esta regla en cada cambio y no deja subir código que la rompa.</div>
+  </section>
+
+  <section id="capas">
+    <div class="sec-head">
+      <span class="path">Modulo/Domain · Application · Infrastructure · UI</span>
+      <h2>Las capas de DDD dentro de cada módulo</h2>
+    </div>
+    <p>DDD (diseño guiado por el negocio) ordena el código por lo que hace el negocio y no por la tecnología. Cada módulo tiene las mismas capas; las de afuera pueden usar las de adentro, nunca al revés.</p>
+    <div class="layers">
+      <div class="onion">
+        <div class="layer"><span class="lname">UI</span><span>Por dónde se entra: pantallas, rutas, comandos.<small>Ej.: <code>Messaging/UI/TaskController</code></small><span class="uses">usa → Application</span></span></div>
+        <div class="layer"><span class="lname">Infrastructure</span><span>Cómo se guarda y cómo se habla con lo técnico: base de datos, Valkey, Google.<small>Ej.: <code>Outbox/DbalOutboxStore</code></small><span class="uses">usa → Application, Domain</span></span></div>
+        <div class="layer"><span class="lname">Application</span><span>Los casos de uso. Es la ventanilla del módulo.<small>Ej.: <code>ProcessOutboxMessage</code>, <code>GatewayRegistry</code></small><span class="uses">usa → Domain, Contract</span></span></div>
+        <div class="layer domain"><span class="lname">Domain</span><span>Las reglas del negocio puras: qué es un intento de pago y en qué estados puede estar.<small>Ej.: <code>Payments/Domain/PaymentAttempt</code></small><span class="uses">no usa nada: ni Symfony ni la base</span></span></div>
+      </div>
+      <div class="card">
+        <span class="tag">Solo en Integration/Payments</span>
+        <h3>Enchufes y adaptadores</h3>
+        <dl>
+          <dt>Contract</dt><dd>Los enchufes: qué debe saber hacer un proveedor de cobros, de bonos o de boletas. No dependen de nada.</dd>
+          <dt>Adapter</dt><dd>Un proveedor concreto que cumple un enchufe: Webpay, POS de Transbank, IMED. Solo conoce los enchufes; un adaptador nunca usa a otro.</dd>
+        </dl>
+        <p style="font-size:14px;color:var(--muted)">La caja solo conoce el enchufe. Agregar un proveedor es crear su adaptador y activarlo en la clínica, sin tocar la caja.</p>
+      </div>
+    </div>
+    <div class="rule"><strong>Una base de datos por clínica.</strong> Main guarda solo lo global (el registro de clínicas). Cada clínica tiene su propia base con pacientes, atenciones, caja y su bandeja de encargos.</div>
+  </section>
+
+  <section id="deptrac">
+    <div class="sec-head">
+      <span class="path">deptrac.modules.yaml · deptrac.layers.yaml</span>
+      <h2>Deptrac, el guardia de la arquitectura</h2>
+    </div>
+    <p>Un revisor automático que lee todo el código y verifica que cada parte use solo lo que tiene permitido. No mira si el código funciona (eso lo hacen las pruebas): mira quién usa a quién. Es como el guardia que revisa las puertas de un hospital: recepción no entra a pabellón y farmacia no modifica fichas.</p>
+    <div class="pair">
+      <div class="card">
+        <span class="tag">deptrac.modules.yaml</span>
+        <h3>Entre módulos</h3>
+        <ul style="margin:0;padding-left:18px;font-size:15px">
+          <li>Las dependencias van solo hacia abajo: Ambulatory → Clinical → Platform.</li>
+          <li>Clinical nunca usa la caja.</li>
+          <li>La caja solo usa el menú de pagos (Contract y Application), nunca un adaptador como Webpay.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">deptrac.layers.yaml</span>
+        <h3>Entre capas</h3>
+        <ul style="margin:0;padding-left:18px;font-size:15px">
+          <li>Domain no usa Symfony ni la base de datos.</li>
+          <li>UI no se salta la ventanilla: usa Application, nunca Infrastructure directo.</li>
+          <li>Los adaptadores solo conocen los enchufes. Que un adaptador no use a otro lo revisa <code>scripts/check-adapters.sh</code>.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Cuándo se ejecuta</th><th>Qué pasa si encuentra una violación</th></tr></thead>
+        <tbody>
+          <tr><td><code>make check</code> / <code>make deptrac</code></td><td>Falla y muestra qué clase usa a cuál sin permiso.</td></tr>
+          <tr><td>Hook antes de cada <code>git push</code></td><td>No deja subir el cambio.</td></tr>
+          <tr><td>CI en el runner propio (develop y master)</td><td>La revisión queda en rojo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule"><strong>Ya sirvió:</strong> al armar la cola, el comando del simulador quedó en UI usando una pieza de Infrastructure. Deptrac lo detectó y se movió a su lugar. Sin un guardia así, con el tiempo alguien toma un atajo "solo esta vez" y el código termina enredado: cambiar una cosa rompe otra.</div>
+  </section>
+
+  <section id="carpetas">
+    <div class="sec-head">
+      <span class="path">src/ hoy</span>
+      <h2>Las carpetas, tal como están</h2>
+    </div>
+    <div class="legend">
+      <span><span class="chip code">código</span> programado y con pruebas</span>
+      <span><span class="chip note">ficha</span> solo instrucciones (CLAUDE.md)</span>
+      <span><span class="chip empty">vacía</span> lista para cuando toque</span>
+    </div>
+    <div class="tree">
+      <ul>
+        <li><details open><summary>Platform/</summary>
+          <ul>
+            <li><details open><summary>Tenancy/ <span class="chip code">código</span></summary>
+              <ul>
+                <li><span class="d">Application/</span><span class="c">qué clínica está activa; lista de clínicas</span></li>
+                <li><span class="d">Infrastructure/Doctrine/</span><span class="c">registro de clínicas en Main</span></li>
+                <li><span class="d">Infrastructure/Hakam/</span><span class="c">la clave de cada base sale de Secret Manager</span></li>
+              </ul>
+            </details></li>
+          </ul>
+        </details></li>
+        <li><details open><summary>Integration/</summary>
+          <ul>
+            <li><details open><summary>Payments/</summary>
+              <ul>
+                <li><span class="d">Contract/</span> <span class="chip code">código</span><span class="c">los enchufes: cobros, bonos, boletas</span></li>
+                <li><span class="d">Domain/</span> <span class="chip code">código</span><span class="c">intento de pago y sus estados</span></li>
+                <li><span class="d">Application/</span> <span class="chip code">código</span><span class="c">registro de proveedores, fusible</span></li>
+                <li><span class="d">Infrastructure/</span> <span class="chip code">código</span><span class="c">fusible sobre Valkey, credenciales</span></li>
+                <li><details open><summary>Adapter/</summary>
+                  <ul>
+                    <li><span class="d">Webpay/</span> <span class="chip code">código</span><span class="c">apagado; probado contra Transbank real</span></li>
+                    <li><span class="d">TransbankPos/</span> <span class="chip code">código</span><span class="c">lado servidor; apagado</span></li>
+                    <li><span class="d">Imed/</span> <span class="chip code">código</span><span class="c">según melisa_prod; falta validar con el kit</span></li>
+                    <li><span class="d">Klap/</span> <span class="chip note">ficha</span><span class="c">espera claves de prueba</span></li>
+                    <li><span class="d">ManualPos/ ManualVoucher/ Snabb/</span> <span class="chip empty">vacía</span></li>
+                  </ul>
+                </details></li>
+                <li><span class="d">UI/</span> <span class="chip empty">vacía</span><span class="c">página de retorno (pendiente)</span></li>
+              </ul>
+            </details></li>
+            <li><details open><summary>Messaging/ <span class="chip code">código</span></summary>
+              <ul>
+                <li><span class="d">Application/</span><span class="c">procesar encargo, barrida, reintentos</span></li>
+                <li><span class="d">Infrastructure/Outbox/</span><span class="c">la bandeja en la base de cada clínica</span></li>
+                <li><span class="d">Infrastructure/Tasks/</span><span class="c">Cloud Tasks (GCP) y el simulador local</span></li>
+                <li><span class="d">UI/</span><span class="c">entrada /_tasks y comando de diagnóstico</span></li>
+              </ul>
+            </details></li>
+            <li><span class="d">Fhir/ Hl7v2/ Lme/ MinsalRecipe/</span> <span class="chip empty">vacía</span></li>
+          </ul>
+        </details></li>
+        <li><span class="d">Clinical/ Ambulatory/ Inpatient/ PublicSector/</span> <span class="chip note">ficha</span><span class="c">reglas listas; el negocio viene después</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="cola">
+    <div class="sec-head">
+      <span class="path">Integration/Messaging · docs/adr/0006</span>
+      <h2>La cola de encargos con Cloud Tasks y Cloud Scheduler</h2>
+    </div>
+    <p>Cuando la cajera cobra, el sistema no la deja esperando mientras habla con Transbank: anota el encargo en la bandeja de la clínica, junto con el cobro, y responde al tiro. Después un timbre hace que el RCE lo procese. Si falla, reintenta al tiro, al minuto y a los 5 minutos; si sigue fallando, queda como fallido con una alerta.</p>
+
+    <div class="pair">
+      <div class="card">
+        <span class="tag">El timbre</span>
+        <h3>Google Cloud Tasks</h3>
+        <dl>
+          <dt>Cuándo llama</dt><dd>Cuando el RCE le pidió avisar un encargo, a la hora indicada.</dd>
+          <dt>A dónde</dt><dd><code>/_tasks/outbox/{clínica}/{encargo}</code></dd>
+          <dt>Quién lo programa</dt><dd>El RCE, encargo por encargo, con la librería oficial de Google.</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <span class="tag">El despertador</span>
+        <h3>Google Cloud Scheduler</h3>
+        <dl>
+          <dt>Cuándo llama</dt><dd>Cada minuto, haya o no encargos.</dd>
+          <dt>A dónde</dt><dd><code>/_tasks/sweep</code> (la barrida)</dd>
+          <dt>Quién lo programa</dt><dd>Se configura una vez al desplegar.</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="rule">Los dos llaman directo al RCE. No se llaman entre ellos y ninguno mira la bandeja: solo el RCE la conoce. Cada llamada viene firmada por Google y el RCE la rechaza si la firma no es válida.</div>
+
+    <h3>Un encargo, de principio a fin</h3>
+    <div class="flow">
+      <div class="step"><div class="num"><span>1</span></div><div class="body"><span class="who"><b>Cajera</b> → RCE</span><p>Aprieta "Pagar con Webpay". El RCE guarda el intento de pago y, en la misma transacción, el encargo "iniciar en Webpay" en la bandeja de la clínica.</p></div></div>
+      <div class="step"><div class="num"><span>2</span></div><div class="body"><span class="who"><b>RCE</b> → Cloud Tasks</span><p>Al terminar la petición, le pide a Cloud Tasks: "ahora, haz un POST a esta dirección del RCE, firmado como esta cuenta de servicio". Se identifica con la cuenta de Cloud Run, sin contraseñas.</p></div></div>
+      <div class="step"><div class="num"><span>3</span></div><div class="body"><span class="who"><b>Cloud Tasks</b> → RCE</span><p>En menos de un segundo llama al RCE. El RCE verifica la firma, se conecta a la base de esa clínica y toma el encargo de forma atómica: si el timbre suena dos veces, se hace una sola.</p></div></div>
+      <div class="step"><div class="num"><span>4</span></div><div class="body"><span class="who"><b>RCE</b> → Transbank</span><p>Crea la transacción en Webpay y marca el encargo como hecho. Si Transbank falla, programa el reintento: al tiro, +1 min, +5 min.</p></div></div>
+      <div class="step alt"><div class="num"><span>!</span></div><div class="body"><span class="who">Si algo se pierde: <b>Cloud Scheduler</b> → RCE</span><p>Si el aviso del paso 2 no llegó a Google, el encargo igual quedó en la bandeja. Al minuto, el despertador llama a la barrida: el RCE revisa las bandejas de todas las clínicas y le pide de nuevo a Cloud Tasks que avise los atrasados.</p></div></div>
+    </div>
+    <div class="note-box">El pago con Webpay de punta a punta todavía no está armado: existen el adaptador de Webpay y la cola, y falta unirlos con la tabla de intentos de pago, sus dos encargos ("iniciar" y "confirmar") y la página de retorno.</div>
+
+    <h3>La bandeja: <code>outbox_message</code>, una por clínica</h3>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Columna</th><th>Qué guarda</th></tr></thead>
+        <tbody>
+          <tr><td><code>message_class</code></td><td>Qué tipo de encargo es, por ejemplo "iniciar un pago". Decide qué parte del RCE lo atiende.</td></tr>
+          <tr><td><code>body</code></td><td>Los datos del encargo, por ejemplo el id del intento de pago. El intento sabe su proveedor (webpay, transbank_pos, imed).</td></tr>
+          <tr><td><code>tenant</code></td><td>De qué clínica es. Un encargo nunca se procesa en otra.</td></tr>
+          <tr><td><code>status</code></td><td>pendiente, en proceso, hecho o fallido.</td></tr>
+          <tr><td><code>attempts</code> · <code>available_at</code></td><td>Cuántas veces se intentó y desde cuándo se puede volver a intentar.</td></tr>
+          <tr><td><code>last_error</code></td><td>Solo el tipo de error, nunca su mensaje: podría traer datos del paciente.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>En tu computador, el contenedor <code>tasks</code> hace de timbre y de despertador a la vez: guarda los avisos en Valkey y llama al RCE igual que Google. El código del RCE es el mismo en los dos lados.</p>
+  </section>
+
+  <section id="valkey">
+    <div class="sec-head">
+      <span class="path">contenedor redis · Memorystore for Valkey 9.1</span>
+      <h2>Valkey, la memoria rápida</h2>
+    </div>
+    <p>Una base de datos muy liviana para cosas chicas y de corta vida, que comparten todos los procesos a la vez. PostgreSQL guarda lo que dura años; Valkey, lo que dura segundos o minutos y se consulta miles de veces.</p>
+    <div class="trio">
+      <div class="card"><span class="tag">Cobros</span><h3>Candado contra cobros dobles</h3><p style="font-size:15px">Si la cajera aprieta "Cobrar" dos veces, el primero toma el candado y el segundo espera o se descarta.</p></div>
+      <div class="card"><span class="tag">Proveedores</span><h3>Fusible por proveedor</h3><p style="font-size:15px">Cuenta las fallas recientes de Webpay o IMED. Si son demasiadas, se deja de llamar a ese proveedor por un rato.</p></div>
+      <div class="card"><span class="tag">Solo local</span><h3>Simulador de Cloud Tasks</h3><p style="font-size:15px">Guarda los avisos de la cola con su hora hasta que el contenedor <code>tasks</code> los entrega. En GCP no se usa.</p></div>
+    </div>
+  </section>
+
+  <section id="donde">
+    <div class="sec-head">
+      <span class="path">compose.yaml ↔ Google Cloud</span>
+      <h2>Qué corre dónde</h2>
+    </div>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Pieza</th><th>En tu computador (Docker)</th><th>En producción (GCP)</th></tr></thead>
+        <tbody>
+          <tr><td>La aplicación</td><td><code>php</code> + <code>nginx</code></td><td>Cloud Run</td></tr>
+          <tr><td>Bases de datos</td><td><code>database</code> (PostgreSQL 18)</td><td>Cloud SQL (PostgreSQL)</td></tr>
+          <tr><td>Clave de las bases de clínica</td><td><code>.env</code>, solo desarrollo</td><td>Secret Manager</td></tr>
+          <tr><td>Memoria rápida</td><td><code>redis</code> (Valkey 9.1)</td><td>Memorystore for Valkey 9.1</td></tr>
+          <tr><td>Timbre de la cola</td><td><code>tasks</code></td><td>Cloud Tasks</td></tr>
+          <tr><td>Despertador de la barrida</td><td><code>tasks</code></td><td>Cloud Scheduler</td></tr>
+          <tr><td>Pruebas antes de subir</td><td><code>make check</code> y el hook pre-push</td><td>CI en el runner propio</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Versión en texto en el repositorio: <code>docs/guia/como-funciona-el-rce.md</code>. Decisiones completas en <code>docs/adr/</code>.</footer>
+</div>
