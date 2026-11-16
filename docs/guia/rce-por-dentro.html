@@ -17,6 +17,8 @@
   --off: #5b6670;
   --off-soft: #eceff1;
   --code-bg: #eef2f4;
+  --no: #a3261d;
+  --no-soft: #fbe5e2;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
@@ -24,13 +26,13 @@
   :root:not([data-theme="light"]) {
     --bg: #0f171c; --surface: #16222a; --ink: #e3ebef; --muted: #9db0bb; --line: #2a3a44;
     --accent: #4fc2b8; --accent-soft: #143633; --warn: #f0c46b; --warn-soft: #3a2e14;
-    --off: #a7b3bb; --off-soft: #222f37; --code-bg: #1c2a33; color-scheme: dark;
+    --off: #a7b3bb; --off-soft: #222f37; --code-bg: #1c2a33; --no: #f19a90; --no-soft: #3d1d1a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f171c; --surface: #16222a; --ink: #e3ebef; --muted: #9db0bb; --line: #2a3a44;
   --accent: #4fc2b8; --accent-soft: #143633; --warn: #f0c46b; --warn-soft: #3a2e14;
-  --off: #a7b3bb; --off-soft: #222f37; --code-bg: #1c2a33; color-scheme: dark;
+  --off: #a7b3bb; --off-soft: #222f37; --code-bg: #1c2a33; --no: #f19a90; --no-soft: #3d1d1a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -121,13 +123,25 @@ details > summary::-webkit-details-marker { display: none; }
 .step.alt .num span { border-color: var(--warn); color: var(--warn); }
 .note-box { background: var(--warn-soft); color: var(--ink); border-radius: 8px; padding: 12px 16px; font-size: 15px; }
 
+/* Reglas de Deptrac */
+.rules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.r { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.r h4 { margin: 0; font-size: 16px; font-weight: 600; }
+.r p { font-size: 15px; }
+.r .ex { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 14px; }
+.r .ex .chip { justify-self: start; }
+.r .why { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
+.chip.yes { background: var(--accent-soft); color: var(--accent); }
+.chip.no { background: var(--no-soft); color: var(--no); }
+
 /* Valkey */
 .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 
 footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
 
 @media (max-width: 760px) {
-  .modules, .layers, .pair, .trio { grid-template-columns: minmax(0, 1fr); }
+  .modules, .layers, .pair, .trio, .rules { grid-template-columns: minmax(0, 1fr); }
+  .r .ex { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .row { grid-template-columns: minmax(0, 1fr); }
   .layer { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .card dl { grid-template-columns: minmax(0, 1fr); }
@@ -208,25 +222,75 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
       <h2>Deptrac, el guardia de la arquitectura</h2>
     </div>
     <p>Un revisor automático que lee todo el código y verifica que cada parte use solo lo que tiene permitido. No mira si el código funciona (eso lo hacen las pruebas): mira quién usa a quién. Es como el guardia que revisa las puertas de un hospital: recepción no entra a pabellón y farmacia no modifica fichas.</p>
+    <p>Revisa dos tipos de reglas. Siguiendo con el hospital:</p>
     <div class="pair">
       <div class="card">
         <span class="tag">deptrac.modules.yaml</span>
-        <h3>Entre módulos</h3>
-        <ul style="margin:0;padding-left:18px;font-size:15px">
-          <li>Las dependencias van solo hacia abajo: Ambulatory → Clinical → Platform.</li>
-          <li>Clinical nunca usa la caja.</li>
-          <li>La caja solo usa el menú de pagos (Contract y Application), nunca un adaptador como Webpay.</li>
-        </ul>
+        <h3>Entre módulos: qué departamento puede pedirle a cuál</h3>
+        <p style="font-size:15px;color:var(--muted)">Como los pisos de un hospital: la urgencia puede pedirle exámenes al laboratorio, pero el laboratorio no le da órdenes a la urgencia.</p>
       </div>
       <div class="card">
         <span class="tag">deptrac.layers.yaml</span>
-        <h3>Entre capas</h3>
-        <ul style="margin:0;padding-left:18px;font-size:15px">
-          <li>Domain no usa Symfony ni la base de datos.</li>
-          <li>UI no se salta la ventanilla: usa Application, nunca Infrastructure directo.</li>
-          <li>Los adaptadores solo conocen los enchufes. Que un adaptador no use a otro lo revisa <code>scripts/check-adapters.sh</code>.</li>
-        </ul>
+        <h3>Entre capas: quién hace qué dentro de un departamento</h3>
+        <p style="font-size:15px;color:var(--muted)">Como dentro de un servicio: el paciente habla con recepción, recepción con el médico, y nadie entra directo a la bodega.</p>
       </div>
+    </div>
+
+    <h3>Reglas entre módulos</h3>
+    <div class="rules">
+      <article class="r">
+        <h4>1. Las dependencias van solo hacia abajo</h4>
+        <p>Ambulatory, Inpatient y PublicSector pueden usar Clinical; Clinical puede usar Platform. Nunca al revés.</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span>La caja ambulatoria pide los datos del paciente a Clinical.</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span>La ficha clínica (Clinical) llama al código de la caja ambulatoria.</span></div>
+        <p class="why"><strong>Por qué:</strong> la ficha clínica es la misma para ambulatorio, hospital y sector público. Si dependiera de la caja ambulatoria, un cambio en esa caja podría romper la ficha del hospital.</p>
+      </article>
+      <article class="r">
+        <h4>2. La caja solo usa el "menú" de pagos</h4>
+        <p>Ambulatory e Inpatient pueden usar de Integration solo los enchufes (Contract) y la ventanilla (Application), nunca un adaptador.</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span>La caja pide "dame el proveedor de cobros <code>webpay</code>" al registro de proveedores.</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span>La caja crea y usa directamente el adaptador de Webpay.</span></div>
+        <p class="why"><strong>Por qué:</strong> el registro revisa que el proveedor esté activo en esa clínica. Además, cambiar Webpay por Klap mañana no obliga a tocar la caja.</p>
+      </article>
+      <article class="r">
+        <h4>3. Integration no conoce la caja</h4>
+        <p>Integration puede usar Clinical y Platform, pero no Ambulatory, Inpatient ni PublicSector.</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span>IMED recibe el RUN del paciente y los códigos de prestación ya traducidos.</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span>El adaptador de IMED busca por su cuenta datos en la caja ambulatoria.</span></div>
+        <p class="why"><strong>Por qué:</strong> el mismo IMED lo usan la caja ambulatoria y la hospitalaria. Si conociera una, no serviría para la otra.</p>
+      </article>
+    </div>
+
+    <h3>Reglas entre capas</h3>
+    <div class="rules">
+      <article class="r">
+        <h4>4. Domain no usa Symfony ni la base de datos</h4>
+        <p>Las reglas del negocio se escriben en PHP puro, sin depender de la herramienta ni de cómo se guardan.</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span>"Un pago confirmado nunca vuelve a pendiente", escrito dentro de <code>PaymentAttempt</code>.</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span>Esa misma regla consultando la base de datos o usando una pieza de Symfony.</span></div>
+        <p class="why"><strong>Por qué:</strong> las reglas del negocio duran más que cualquier tecnología. Si mañana cambia Symfony o la base, las reglas no se tocan. Además se prueban en milésimas de segundo.</p>
+      </article>
+      <article class="r">
+        <h4>5. UI no se salta la ventanilla</h4>
+        <p>Una pantalla, ruta o comando llama al caso de uso (Application), nunca directo a la base o a un servicio externo (Infrastructure).</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span><code>TaskController</code> llama a <code>ProcessOutboxMessage</code>.</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span><code>TaskController</code> escribe directo en la tabla de la bandeja.</span></div>
+        <p class="why"><strong>Por qué:</strong> las reglas importantes viven en el caso de uso: verificar la clínica, no procesar dos veces, reintentar. Saltarse la ventanilla es saltarse esas reglas.</p>
+      </article>
+      <article class="r">
+        <h4>6. Los adaptadores solo conocen los enchufes</h4>
+        <p>Un adaptador (Webpay, POS, IMED) solo usa Contract. No usa el dominio ni la ventanilla de pagos.</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span><code>WebpayGateway</code> recibe "inicia un pago de $15.000" y devuelve "redirige a esta URL".</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span><code>WebpayGateway</code> cambia el estado del intento de pago por su cuenta.</span></div>
+        <p class="why"><strong>Por qué:</strong> el adaptador solo traduce entre el RCE y el proveedor. Las decisiones (confirmar, reintentar, auditar) las toma el RCE, igual para todos los proveedores.</p>
+      </article>
+      <article class="r">
+        <h4>7. Un adaptador no usa a otro</h4>
+        <p>Lo revisa <code>scripts/check-adapters.sh</code> (Deptrac no alcanza a verlo solo).</p>
+        <div class="ex"><span class="chip yes">Permitido</span><span>IMED y Webpay, cada uno por su lado, cumpliendo su enchufe.</span></div>
+        <div class="ex"><span class="chip no">Prohibido</span><span>El adaptador de IMED reutiliza código del adaptador de Webpay.</span></div>
+        <p class="why"><strong>Por qué:</strong> si Transbank cambia algo y hay que modificar Webpay, IMED no debe romperse.</p>
+      </article>
     </div>
     <div class="table-box">
       <table>
@@ -249,7 +313,8 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
     <div class="legend">
       <span><span class="chip code">código</span> programado y con pruebas</span>
       <span><span class="chip note">ficha</span> solo instrucciones (CLAUDE.md)</span>
-      <span><span class="chip empty">vacía</span> lista para cuando toque</span>
+      <span><span class="chip empty">vacía</span> carpeta creada, sin código</span>
+      <span><span class="chip empty">por crear</span> planificada, la carpeta aún no existe</span>
     </div>
     <div class="tree">
       <ul>
@@ -295,7 +360,48 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
             <li><span class="d">Fhir/ Hl7v2/ Lme/ MinsalRecipe/</span> <span class="chip empty">vacía</span></li>
           </ul>
         </details></li>
-        <li><span class="d">Clinical/ Ambulatory/ Inpatient/ PublicSector/</span> <span class="chip note">ficha</span><span class="c">reglas listas; el negocio viene después</span></li>
+        <li><details open><summary>Clinical/ <span class="chip note">ficha</span> <span class="c">núcleo clínico compartido · MVP</span></summary>
+          <ul>
+            <li><span class="d">CLAUDE.md</span><span class="c">solo usa Platform; la ficha nunca se borra (enmiendas); todo se audita; CIE-10 y RUN validado</span></li>
+            <li><span class="d">Patient/</span> <span class="chip empty">por crear</span><span class="c">paciente, RUN, previsión, alergias</span></li>
+            <li><span class="d">Encounter/</span> <span class="chip empty">por crear</span><span class="c">atención o consulta</span></li>
+            <li><span class="d">Diagnosis/</span> <span class="chip empty">por crear</span><span class="c">diagnósticos en CIE-10</span></li>
+            <li><span class="d">Prescription/</span> <span class="chip empty">por crear</span><span class="c">recetas</span></li>
+            <li><span class="d">Order/</span> <span class="chip empty">por crear</span><span class="c">órdenes de exámenes y procedimientos</span></li>
+            <li><span class="d">ClinicalDocument/</span> <span class="chip empty">por crear</span><span class="c">documentos clínicos firmados</span></li>
+          </ul>
+        </details></li>
+        <li><details open><summary>Ambulatory/ <span class="chip note">ficha</span> <span class="c">atención ambulatoria · MVP</span></summary>
+          <ul>
+            <li><span class="d">CLAUDE.md</span><span class="c">usa Clinical y Platform solo por su ventanilla; caja separada de la hospitalaria; dinero en enteros</span></li>
+            <li><span class="d">Scheduling/</span> <span class="chip empty">por crear</span><span class="c">agenda de profesionales y citas</span></li>
+            <li><span class="d">Reception/</span> <span class="chip empty">por crear</span><span class="c">recepción y sala de espera</span></li>
+            <li><span class="d">Telemedicine/</span> <span class="chip empty">por crear</span><span class="c">teleconsulta (Fase 2)</span></li>
+            <li><span class="d">Billing/</span> <span class="chip empty">por crear</span><span class="c">caja ambulatoria: usa el menú de pagos de Integration</span></li>
+          </ul>
+        </details></li>
+        <li><details><summary>Inpatient/ <span class="chip note">ficha</span> <span class="c">hospitalario privado · Fase 3</span></summary>
+          <ul>
+            <li><span class="d">CLAUDE.md</span><span class="c">usa Clinical y Platform solo por su ventanilla; caja separada de la ambulatoria</span></li>
+            <li><span class="d">Admission/</span> <span class="chip empty">por crear</span><span class="c">ingresos y altas</span></li>
+            <li><span class="d">Billing/</span> <span class="chip empty">por crear</span><span class="c">caja hospitalaria</span></li>
+            <li><span class="d">Pharmacy/</span> <span class="chip empty">por crear</span><span class="c">farmacia</span></li>
+            <li><span class="d">Emergency/</span> <span class="chip empty">por crear</span><span class="c">urgencia y triage</span></li>
+            <li><span class="d">Surgery/</span> <span class="chip empty">por crear</span><span class="c">pabellón y tabla quirúrgica</span></li>
+            <li><span class="d">Ward/</span> <span class="chip empty">por crear</span><span class="c">servicios y camas</span></li>
+            <li><span class="d">Nursing/</span> <span class="chip empty">por crear</span><span class="c">enfermería: turno, medicamentos, signos vitales</span></li>
+          </ul>
+        </details></li>
+        <li><details><summary>PublicSector/ <span class="chip note">ficha</span> <span class="c">capa pública · Fase 4</span></summary>
+          <ul>
+            <li><span class="d">CLAUDE.md</span><span class="c">usa Clinical y Platform solo por su ventanilla</span></li>
+            <li><span class="d">PrimaryCare/</span> <span class="chip empty">por crear</span><span class="c">atención primaria (APS)</span></li>
+            <li><span class="d">Statistics/</span> <span class="chip empty">por crear</span><span class="c">estadísticas REM</span></li>
+            <li><span class="d">Ges/</span> <span class="chip empty">por crear</span><span class="c">garantías explícitas en salud</span></li>
+            <li><span class="d">Network/</span> <span class="chip empty">por crear</span><span class="c">red asistencial y derivaciones</span></li>
+            <li><span class="d">Grd/</span> <span class="chip empty">por crear</span><span class="c">grupos relacionados por diagnóstico</span></li>
+          </ul>
+        </details></li>
       </ul>
     </div>
   </section>

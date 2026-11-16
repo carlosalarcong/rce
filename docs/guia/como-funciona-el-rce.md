@@ -19,6 +19,15 @@ El RCE es **una sola aplicación** (monolito) dividida en **módulos** que no se
 | `PublicSector/` | Capa pública | APS, REM, GES |
 | `Integration/` | Conexión con el mundo exterior | pagos (Webpay, POS, IMED), cola de encargos, FHIR, HL7 |
 
+**Qué hay hoy dentro de los módulos del negocio:** solo su ficha (`CLAUDE.md`) con las reglas del módulo. Los submódulos están planificados y se crean cuando toque:
+
+| Módulo | Fase | Submódulos planificados |
+|---|---|---|
+| `Clinical/` | MVP | `Patient` (paciente, RUN, previsión, alergias), `Encounter` (atención), `Diagnosis` (CIE-10), `Prescription` (recetas), `Order` (exámenes y procedimientos), `ClinicalDocument` (documentos firmados) |
+| `Ambulatory/` | MVP | `Scheduling` (agenda), `Reception` (recepción y sala de espera), `Telemedicine` (Fase 2), `Billing` (caja ambulatoria) |
+| `Inpatient/` | Fase 3 | `Admission` (ingresos y altas), `Billing` (caja hospitalaria), `Pharmacy`, `Emergency` (urgencia y triage), `Surgery` (pabellón), `Ward` (servicios y camas), `Nursing` (enfermería) |
+| `PublicSector/` | Fase 4 | `PrimaryCare` (APS), `Statistics` (REM), `Ges`, `Network` (red y derivaciones), `Grd` |
+
 **Regla de oro: las dependencias van solo hacia abajo.** Ambulatorio y Hospitalario usan Clínico; Clínico usa Plataforma. Nunca al revés: Clínico no sabe que existe la caja. Una herramienta (Deptrac) revisa esta regla en cada cambio y no deja subir código que la rompa.
 
 ### Dentro de cada módulo: las capas de DDD
@@ -48,11 +57,19 @@ En `Integration/Payments` hay dos capas más:
 
 Deptrac es un **revisor automático de las reglas de arquitectura**. Lee todo el código y verifica que cada parte use solo lo que tiene permitido. No mira si el código funciona (eso lo hacen las pruebas): mira **quién usa a quién**. Es como el guardia que revisa las puertas de un hospital: recepción no entra a pabellón y farmacia no modifica fichas.
 
-| Archivo | Qué revisa |
-|---|---|
-| `deptrac.modules.yaml` | **Entre módulos:** las dependencias van solo hacia abajo (Ambulatory → Clinical → Platform); Clinical nunca usa la caja; la caja solo usa el menú de pagos (Contract y Application), nunca un adaptador como Webpay |
-| `deptrac.layers.yaml` | **Entre capas:** Domain no usa Symfony ni la base de datos; UI no se salta la ventanilla (usa Application, nunca Infrastructure directo); los adaptadores solo conocen los enchufes |
-| `scripts/check-adapters.sh` | Que un adaptador no use a otro adaptador |
+Revisa dos tipos de reglas:
+- **Entre módulos** (`deptrac.modules.yaml`): qué departamento puede pedirle a cuál. Como los pisos de un hospital: la urgencia le pide exámenes al laboratorio, pero el laboratorio no le da órdenes a la urgencia.
+- **Entre capas** (`deptrac.layers.yaml`): quién hace qué dentro de un departamento. El paciente habla con recepción, recepción con el médico, y nadie entra directo a la bodega.
+
+| # | Regla | Permitido | Prohibido | Por qué |
+|---|---|---|---|---|
+| 1 | Las dependencias van solo hacia abajo (Ambulatory, Inpatient y PublicSector → Clinical → Platform) | La caja pide los datos del paciente a Clinical | La ficha clínica llama al código de la caja | La ficha es la misma para ambulatorio, hospital y sector público: un cambio en una caja no puede romperla |
+| 2 | La caja solo usa el "menú" de pagos (Contract y Application de Integration) | La caja pide "dame el proveedor `webpay`" al registro | La caja usa directamente el adaptador de Webpay | El registro revisa que el proveedor esté activo en la clínica, y cambiar de proveedor no toca la caja |
+| 3 | Integration no conoce la caja (solo usa Clinical y Platform) | IMED recibe el RUN y los códigos ya traducidos | IMED busca datos en la caja ambulatoria | El mismo IMED lo usan la caja ambulatoria y la hospitalaria |
+| 4 | Domain no usa Symfony ni la base de datos | "Un pago confirmado no vuelve a pendiente", dentro de `PaymentAttempt` | Esa regla consultando la base o usando Symfony | Las reglas del negocio duran más que la tecnología y se prueban en milésimas de segundo |
+| 5 | UI no se salta la ventanilla (usa Application, nunca Infrastructure) | `TaskController` llama a `ProcessOutboxMessage` | `TaskController` escribe directo en la tabla de la bandeja | Las reglas importantes (verificar clínica, no repetir, reintentar) viven en el caso de uso |
+| 6 | Los adaptadores solo conocen los enchufes (Contract) | `WebpayGateway` recibe "cobra $15.000" y devuelve "redirige aquí" | `WebpayGateway` cambia el estado del intento de pago | El adaptador solo traduce; las decisiones las toma el RCE, igual para todos los proveedores |
+| 7 | Un adaptador no usa a otro (`scripts/check-adapters.sh`) | IMED y Webpay, cada uno por su lado | IMED reutiliza código de Webpay | Si cambia Webpay, IMED no debe romperse |
 
 **Cuándo se ejecuta:**
 - `make check` y `make deptrac`: falla y muestra qué clase usa a cuál sin permiso;
