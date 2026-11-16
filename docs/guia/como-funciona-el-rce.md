@@ -210,3 +210,56 @@ El whiteboard [Mapa de módulos RCE](https://claude.ai/artifact/SMhQcqUSiPsa6q5d
 | Todo lo demás | 0 % | Núcleo clínico, auditoría, FHIR, reportes, OIE, hospitalario y capa pública: aún sin código |
 
 **Cómo actualizarlo:** cuando un bloque avance, se cambia su porcentaje en el whiteboard, en esta tabla y en `mapa-de-modulos.md`.
+
+---
+
+## 7. Por qué el inicio de sesión vive dentro del RCE (y no en un sistema aparte)
+
+**La pregunta:** ¿las cuentas de las personas deberían vivir en un sistema central aparte, como Nexia Core para Acredita360, o dentro del RCE?
+
+**La decisión (ADR 0005, 2026-11-16):** dentro del RCE, en el módulo `Platform/Identity`, porque **el RCE será el único producto**.
+
+**En simple:** un sistema central aparte sirve cuando hay **varios productos** que comparten a las mismas personas, como Nexia, que atiende a Acredita360, Consult y otros. Con un solo producto, separarlo es como tener una portería en otro edificio solo para entrar a uno: más caminos, más cosas que se pueden caer y más trabajo, sin ganar nada.
+
+| | Sistema aparte | Dentro del RCE (elegido) |
+|---|---|---|
+| Sistemas que mantener | 2 | 1 |
+| Si la parte de cuentas se cae | Nadie entra al RCE | Un punto de falla menos |
+| Tiempo hasta tener inicio de sesión | Semanas | Días |
+| Contraseñas separadas de la ficha clínica | Sí | **También**: viven en la base Main, aparte de las bases de cada clínica |
+
+**Lo que se mantiene igual:**
+- una persona entra una vez y cambia de clínica sin volver a entrar;
+- el segundo factor es configurable por clínica y perfil;
+- soporte tiene su propio panel (`soporte.rce.cl`);
+- cada clínica invita a su gente.
+
+**Cuándo se revisaría:** si aparece un segundo producto que comparta las cuentas, si clínicas grandes exigen entrar con su cuenta de Microsoft o Google para varios sistemas, o si identidad y producto los mantienen equipos distintos. Para ese día, el módulo se diseña de modo que sacarlo sea mover una pieza, no rehacer el RCE.
+
+**Qué pasó con lo que se avanzó:**
+- `rce-central` (la copia de Nexia Core) quedó **archivado** en GitHub, como referencia;
+- `rce-ui` (los componentes de pantalla) y `rce-recetas-flex` siguen en uso para el RCE.
+
+---
+
+## 8. Si una clínica deja de funcionar: cómo saberlo y levantarla
+
+Todas las clínicas entran por la misma aplicación, pero **cada una tiene su propia base de datos**:
+
+| Si se cae… | A quién afecta | Qué pasa |
+|---|---|---|
+| La aplicación RCE | A todas las clínicas | Cloud Run tiene varias copias y reinicia sola la que falla. Si un cambio nuevo salió malo, se vuelve a la versión anterior |
+| La base de una clínica | **Solo a esa clínica** | Las demás siguen trabajando normal |
+| La base Main | A todas para entrar | Cloud SQL con alta disponibilidad tiene una copia de reserva que toma el lugar sola |
+
+**Cómo te enteras** (planificado, ADR 0005 sección 9):
+- "Estado de las clínicas" en el panel de soporte, en verde o rojo;
+- alertas automáticas de Cloud Monitoring;
+- errores registrados con el nombre de la clínica.
+
+**Cómo la levantas:** según el problema:
+- reiniciar su base;
+- volver a correr una migración **solo para esa clínica**;
+- restaurar **solo esa clínica** desde su respaldo diario.
+
+Mientras tanto, esa clínica queda en **modo mantenimiento** con un aviso claro, y las demás siguen normal. Cada caso tiene su manual paso a paso en `docs/manuales/`.

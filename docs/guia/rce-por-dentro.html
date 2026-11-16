@@ -165,6 +165,8 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
       <a href="#valkey">Valkey</a>
       <a href="#donde">Qué corre dónde</a>
       <a href="#avance">Avance</a>
+      <a href="#identidad">Inicio de sesión</a>
+      <a href="#caidas">Si una clínica cae</a>
     </nav>
   </header>
 
@@ -520,6 +522,45 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section id="identidad">
+    <div class="sec-head">
+      <span class="path">docs/adr/0005 · Platform/Identity</span>
+      <h2>Por qué el inicio de sesión vive dentro del RCE</h2>
+    </div>
+    <p>Un sistema central de cuentas aparte, como Nexia Core para Acredita360, sirve cuando hay <strong>varios productos</strong> que comparten a las mismas personas. El RCE será el único producto: separarlo sería como tener una portería en otro edificio solo para entrar a uno. Más caminos, más cosas que se pueden caer y más trabajo, sin ganar nada.</p>
+    <div class="table-box">
+      <table>
+        <thead><tr><th></th><th>Sistema aparte</th><th>Dentro del RCE (elegido)</th></tr></thead>
+        <tbody>
+          <tr><td>Sistemas que mantener</td><td>2</td><td>1</td></tr>
+          <tr><td>Si la parte de cuentas se cae</td><td>Nadie entra al RCE</td><td>Un punto de falla menos</td></tr>
+          <tr><td>Tiempo hasta tener inicio de sesión</td><td>Semanas</td><td>Días</td></tr>
+          <tr><td>Contraseñas separadas de la ficha clínica</td><td>Sí</td><td>También: viven en la base Main, aparte de las bases de cada clínica</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule"><strong>Se mantiene igual:</strong> una persona entra una vez y cambia de clínica sin volver a entrar; segundo factor configurable por clínica y perfil; panel propio de soporte; cada clínica invita a su gente. <strong>Se revisaría</strong> si aparece un segundo producto que comparta las cuentas. La copia de Nexia (<code>rce-central</code>) quedó archivada como referencia.</div>
+  </section>
+
+  <section id="caidas">
+    <div class="sec-head">
+      <span class="path">docs/adr/0005 §9 · panel de soporte</span>
+      <h2>Si una clínica deja de funcionar</h2>
+    </div>
+    <p>Todas las clínicas entran por la misma aplicación, pero cada una tiene su propia base de datos. Una falla en la base de una clínica afecta solo a esa clínica.</p>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Si se cae…</th><th>A quién afecta</th><th>Qué pasa</th></tr></thead>
+        <tbody>
+          <tr><td>La aplicación RCE</td><td>A todas</td><td>Cloud Run reinicia sola la copia que falla; un cambio malo se revierte a la versión anterior.</td></tr>
+          <tr><td>La base de una clínica</td><td><strong>Solo a esa clínica</strong></td><td>Las demás siguen normal.</td></tr>
+          <tr><td>La base Main</td><td>A todas para entrar</td><td>Cloud SQL con alta disponibilidad cambia sola a su copia de reserva.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule"><strong>Planificado (antes de la primera clínica real):</strong> estado de las clínicas en verde o rojo en el panel de soporte, alertas automáticas, errores con el nombre de la clínica, respaldo diario por clínica, modo mantenimiento por clínica y manuales paso a paso para restaurar o volver a migrar solo esa clínica.</div>
   </section>
 
   <footer>Versión en texto en el repositorio: <code>docs/guia/como-funciona-el-rce.md</code>. Decisiones completas en <code>docs/adr/</code>.</footer>
