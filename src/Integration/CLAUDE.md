@@ -11,7 +11,7 @@ src/Integration/
 ├── Payments/
 │   ├── Contract/
 │   │   ├── PaymentGatewayInterface.php      # startPayment(), confirm(), refund()
-│   │   ├── VoucherProviderInterface.php     # issueVoucher(), validate(), cancel()
+│   │   ├── VoucherProviderInterface.php     # startVoucherSale(), confirmVoucherSale(), cancel()
 │   │   └── TaxDocumentIssuerInterface.php   # issue(), void()
 │   ├── Domain/
 │   │   ├── PaymentAttempt.php               # intento con estado, provider, idempotency_key, montos en enteros
@@ -44,7 +44,7 @@ src/Integration/
 
 ## Contratos
 - `PaymentGatewayInterface`: cobrar dinero (Webpay, Klap, POS manual).
-- `VoucherProviderInterface`: emitir o validar bonos (IMED, SNABB/BonoWeb, folio manual).
+- `VoucherProviderInterface`: bonos (IMED, SNABB/BonoWeb, folio manual). Igual que un pago web: se inicia la venta, el paciente se identifica en la ventana del proveedor y se consulta el resultado, que puede traer varios bonos.
 - `TaxDocumentIssuerInterface`: emitir boletas (facturador electrónico).
 - Cada adaptador implementa uno de estos contratos y se registra con un tag:
   `#[AutoconfigureTag('payment.gateway')]`, `#[AutoconfigureTag('payment.voucher_provider')]`, `#[AutoconfigureTag('payment.tax_issuer')]`.

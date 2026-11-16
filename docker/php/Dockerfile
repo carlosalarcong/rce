@@ -3,10 +3,11 @@ FROM php:8.5-fpm-alpine AS base
 
 COPY --from=ghcr.io/mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
 # pgsql (nativo) además de pdo_pgsql: Hakam arma DSN "pgsql://" para crear bases de tenant, y DBAL lo resuelve al driver nativo.
+# soap: el bono electrónico de IMED es un servicio SOAP (Adapter/Imed).
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
 RUN apk add --no-cache git unzip \
-    && install-php-extensions pdo_pgsql pgsql intl zip apcu redis
+    && install-php-extensions pdo_pgsql pgsql intl zip apcu redis soap
 
 COPY docker/php/conf.d/app.ini $PHP_INI_DIR/conf.d/zz-app.ini
 

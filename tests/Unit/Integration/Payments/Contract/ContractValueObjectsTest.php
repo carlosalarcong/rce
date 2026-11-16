@@ -8,6 +8,7 @@ use App\Integration\Payments\Contract\CancelVoucher;
 use App\Integration\Payments\Contract\Clp;
 use App\Integration\Payments\Contract\ConfirmPayment;
 use App\Integration\Payments\Contract\IdempotencyKey;
+use App\Integration\Payments\Contract\IssuedVoucher;
 use App\Integration\Payments\Contract\IssueTaxDocument;
 use App\Integration\Payments\Contract\PaymentNextStep;
 use App\Integration\Payments\Contract\PaymentOutcome;
@@ -15,13 +16,16 @@ use App\Integration\Payments\Contract\PaymentResult;
 use App\Integration\Payments\Contract\PaymentStarted;
 use App\Integration\Payments\Contract\RefundPayment;
 use App\Integration\Payments\Contract\StartPayment;
+use App\Integration\Payments\Contract\StartVoucherSale;
 use App\Integration\Payments\Contract\TaxDocumentIssued;
 use App\Integration\Payments\Contract\TaxDocumentLine;
 use App\Integration\Payments\Contract\TaxDocumentType;
 use App\Integration\Payments\Contract\VoidTaxDocument;
+use App\Integration\Payments\Contract\VoucherCancelled;
 use App\Integration\Payments\Contract\VoucherLine;
-use App\Integration\Payments\Contract\VoucherRequestData;
-use App\Integration\Payments\Contract\VoucherValidation;
+use App\Integration\Payments\Contract\VoucherSaleOutcome;
+use App\Integration\Payments\Contract\VoucherSaleResult;
+use App\Integration\Payments\Contract\VoucherSaleStarted;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -133,44 +137,76 @@ final class ContractValueObjectsTest extends TestCase
         new RefundPayment($this->key(), 'token-1', new Clp(0));
     }
 
-    public function testVoucherTotalMultipliesQuantity(): void
+    public function testVoucherSaleTotalMultipliesQuantity(): void
     {
-        $data = new VoucherRequestData('11111111-1', 'fonasa', '22222222-2', [
+        $sale = $this->voucherSale([
             new VoucherLine('0101001', 1, new Clp(12000)),
             new VoucherLine('0305001', 2, new Clp(3500)),
         ]);
 
-        self::assertSame(19000, $data->total()->value);
+        self::assertSame(19000, $sale->total()->value);
     }
 
-    public function testVoucherNeedsLines(): void
+    public function testVoucherSaleNeedsLines(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new VoucherRequestData('11111111-1', 'fonasa', '22222222-2', []);
+        $this->voucherSale([]);
     }
 
-    public function testVoucherNeedsPatient(): void
+    public function testVoucherSaleNeedsNormalizedRuns(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new VoucherRequestData(' ', 'fonasa', '22222222-2', [new VoucherLine('0101001', 1, new Clp(12000))]);
+        new StartVoucherSale($this->key(), '1', '11.111.111-1', '22222222-2', [new VoucherLine('0101001', 1, new Clp(12000))], 'https://x.test/r');
     }
 
-    public function testVoucherLineNeedsQuantity(): void
+    public function testVoucherLineNeedsQuantityAndNumericItem(): void
     {
+        try {
+            new VoucherLine('0101001', 0, new Clp(12000));
+            self::fail('Expected an exception for quantity 0.');
+        } catch (\InvalidArgumentException) {
+        }
+
         $this->expectException(\InvalidArgumentException::class);
-        new VoucherLine('0101001', 0, new Clp(12000));
+        new VoucherLine('0101001', 1, new Clp(12000), 'X');
     }
 
-    public function testNonEligibleValidationNeedsReason(): void
+    public function testRejectedVoucherSaleNeedsReasonAndNoNextStep(): void
+    {
+        self::assertTrue(VoucherSaleStarted::rejected('Sin cobertura')->isRejected());
+
+        $this->expectException(\InvalidArgumentException::class);
+        new VoucherSaleStarted('ref', PaymentNextStep::Redirect, 'https://x.test', [], 'Sin cobertura');
+    }
+
+    public function testIssuedVoucherSaleNeedsVouchersAndOnlyIssuedHasThem(): void
+    {
+        try {
+            new VoucherSaleOutcome(VoucherSaleResult::Issued, 'ref');
+            self::fail('Expected an exception for an issued sale without vouchers.');
+        } catch (\InvalidArgumentException) {
+        }
+
+        $this->expectException(\InvalidArgumentException::class);
+        new VoucherSaleOutcome(VoucherSaleResult::Pending, 'ref', [new IssuedVoucher('F-1', new Clp(1000), [])]);
+    }
+
+    public function testFailedCancellationNeedsReason(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new VoucherValidation(false, new Clp(0), new Clp(0));
+        new VoucherCancelled(false, 'F-1');
     }
 
     public function testCancelVoucherNeedsReason(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        new CancelVoucher($this->key(), 'F-1', ' ');
+        new CancelVoucher($this->key(), 'F-1', ' ', '1', '22222222-2');
+    }
+
+    /** @param list<VoucherLine> $lines */
+    private function voucherSale(array $lines): StartVoucherSale
+    {
+        return new StartVoucherSale($this->key(), '1', '11111111-1', '22222222-2', $lines, 'https://x.test/r');
     }
 
     public function testTaxDocumentTotal(): void

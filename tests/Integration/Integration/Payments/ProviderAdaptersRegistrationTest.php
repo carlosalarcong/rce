@@ -13,7 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
  * Los adaptadores quedan registrados por su tag, pero inactivos hasta la
  * configuración por tenant. Un adaptador sin registrar diría "No adapter".
  */
-final class TransbankAdaptersRegistrationTest extends KernelTestCase
+final class ProviderAdaptersRegistrationTest extends KernelTestCase
 {
     #[DataProvider('adapters')]
     public function testAdapterIsRegisteredButNotActiveYet(string $name): void
@@ -33,5 +33,17 @@ final class TransbankAdaptersRegistrationTest extends KernelTestCase
     {
         yield 'webpay' => ['webpay'];
         yield 'transbank_pos' => ['transbank_pos'];
+    }
+
+    public function testImedIsRegisteredButNotActiveYet(): void
+    {
+        $registry = self::getContainer()->get(GatewayRegistry::class);
+
+        try {
+            $registry->voucherProvider('imed');
+            self::fail('No provider should be active yet.');
+        } catch (ProviderNotAvailableException $e) {
+            self::assertStringContainsString('not active', $e->getMessage());
+        }
     }
 }

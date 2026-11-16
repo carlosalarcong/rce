@@ -25,7 +25,8 @@
 - **2026-11-15:**
   - **Webpay** (`WebpayGateway`, librería oficial `transbank/transbank-sdk`) y el **lado del servidor del POS de Transbank** (`TransbankPosGateway`) quedan implementados y probados, pero inactivos.
   - Las credenciales llegan por `ProviderCredentialsInterface`.
-  - IMED y Klap esperan su documentación. El análisis de IMED en melisa_prod está en `Adapter/Imed/CLAUDE.md`.
+  - **IMED** (`ImedGateway`, SOAP) queda implementado e inactivo, construido a partir de melisa_prod (no del kit oficial). El contrato de bonos pasa a iniciar → ventana del proveedor → consultar → anular. Antes de activarlo hay que validarlo con el kit de IMED.
+  - Klap espera su documentación o credenciales de prueba.
 
 ## Pendientes (resolver antes del primer cobro real)
 1. **Outbox por tenant.** Messenger usa `doctrine://default` (Main). La regla de guardar el `PaymentAttempt` y el mensaje en la misma transacción obliga a que el outbox viva en la **base del tenant**, y a que el worker cambie al tenant correcto (`SwitchDbEvent`) antes de procesar cada mensaje. Va con su propia ADR.
@@ -37,7 +38,8 @@
 7. **Webhooks:** `UI/WebhookController` (`POST /webhooks/{provider}`) toca el firewall (`Platform/Security`), así que requiere confirmación. Además, la URL de retorno es por subdominio del tenant.
 8. **Value object `Run`:** los contratos de bonos reciben el RUN como texto normalizado. Cambiar el tipo cuando exista `Run` en Platform.
 9. **POS de Transbank:** la documentación (revisada el 2026-11-15) resuelve la conexión: un agente local de Transbank en el computador de recepción (websocket en `localhost:8090`) y la pantalla de caja le habla con JavaScript. El servidor no habla con la máquina. **Queda pendiente** cómo se respalda un "aprobado" que llega desde el navegador (conciliación con el reporte de Transbank, permisos y auditoría). Ver `Adapter/TransbankPos/CLAUDE.md`. El RCE usa el puerto 8180 en Docker para no chocar con el agente.
-10. **Memorystore en producción:** crear la instancia con Valkey 9.1 (no se puede bajar de versión después) y configurar `REDIS_URL` y `LOCK_DSN` con su IP privada.
+10. **Salida a IMED por DMZ:** IMED atiende por HTTP plano (puerto 80/8080). En producción se sale por un proxy o DMZ con IP fija y solo hacia IMED. Se puede simular en local con una red Docker interna y un proxy (`Adapter/Imed/CLAUDE.md`). Va con su ADR.
+11. **Memorystore en producción:** crear la instancia con Valkey 9.1 (no se puede bajar de versión después) y configurar `REDIS_URL` y `LOCK_DSN` con su IP privada.
 
 ## Consecuencias
 - Agregar un proveedor no toca la caja: se crea su adaptador, se le da su nombre y su tag, y se activa en el tenant.

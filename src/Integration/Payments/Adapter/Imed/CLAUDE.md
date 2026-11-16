@@ -1,58 +1,61 @@
 # Adapter/Imed — Bono electrónico IMED
 
-**Estado:** sin implementar. Se espera el kit de integración de IMED. Ya está analizado cómo lo hace `melisa_prod`.
+**Estado:** implementado (`ImedGateway`) **a partir de melisa_prod, no del kit oficial**. Está **inactivo**: antes de activarlo hay que validarlo con el kit y con el ambiente de pruebas de IMED.
 
-- **Contrato:** `VoucherProviderInterface`. Probablemente haya que ajustarlo: ver "Impacto en el contrato".
+- **Contrato:** `VoucherProviderInterface` (`startVoucherSale` → ventana de IMED → `confirmVoucherSale` → `cancel`).
 - **Nombre:** `imed`. **Tag:** `#[AutoconfigureTag('payment.voucher_provider')]`.
+- **Transporte:** SOAP, con la extensión `soap` de PHP (en el `Dockerfile`). `NativeImedSoapClientFactory` usa timeout `IMED_TIMEOUT_SECONDS` (10 s) y convierte todo fault o error de red en `ProviderUnavailableException`.
 
 ## Documentación
-- **No hay documentación pública.** La integración se pide a IMED con convenio, que entrega el kit, el WSDL y las credenciales.
-- `ayuda.imed.cl` solo publica requisitos de red.
+- **No hay documentación pública.** IMED entrega con el convenio el kit, el WSDL y las credenciales.
+- Referencia usada: `melisa_prod`, en `RecaudacionBundle/.../Imed/ImedController.php` y `docs/negocio/caja/CAJA-06-imed.md`. Es código legacy que funciona, pero sin patrón.
 
-## Cómo lo hace melisa_prod (analizado el 2026-11-15)
-Código legacy, que funciona pero sin patrón. Análisis completo en `melisa_prod/docs/negocio/caja/CAJA-06-imed.md` y en `RecaudacionBundle/.../Imed/ImedController.php`. **Validar todo contra el kit oficial.**
+## Configuración por centro (`ProviderCredentialsInterface`, clave `imed`)
+| Clave | Qué es | En IMED |
+|---|---|---|
+| `username`, `password` | credenciales del centro | `CodUsuario`, `CodClave` |
+| `wsdl_url` | servicio SOAP | `WsInterfaz.php?wsdl` |
+| `window_url` | ventana donde el paciente se identifica y paga | `login.php` |
+| `place_code` | lugar de atención | `CodLugar` |
+| `agreement_run` | RUT del prestador en convenio | `RutConvenio` |
 
-**Transporte:** SOAP con WSDL (`WsInterfaz.php?wsdl`). Las credenciales `CodUsuario` y `CodClave` van como campos de cada operación, sin certificados. En melisa la URL es `http://` sin TLS: **exigir HTTPS a IMED**.
+Quien llama entrega ya traducidos el código IMED de la previsión (`CodFinanciador`), de la especialidad y de cada prestación. Esa traducción es del negocio (catálogos), no de este adaptador.
 
-**Datos por centro:**
-- `CodLugar`: lugar de atención, uno por sucursal.
-- `RutConvenio`: RUT del prestador, con "00" delante.
-- `CodFinanciador`: código IMED de cada previsión (Fonasa, cada Isapre).
-- Códigos IMED de prestación (pueden variar por previsión) y de especialidad.
+## Flujo
+1. **`startVoucherSale()`** llama `VtaBonInterMul` y recibe la transacción (`NumTransac`, puede venir más de una) y la auditoría (`CodAuditoria`). Devuelve `Redirect` a `window_url` con `NroAuditoria` y `NumTransac`. La referencia queda como `"NumTransac|CodAuditoria"`. Si IMED responde `CodError` 1, la venta vuelve **rechazada con su motivo**, sin excepción.
+2. **Ventana de IMED:** el paciente se identifica (huella u otro método) y paga el copago. El RCE no ve nada de eso.
+3. **`confirmVoucherSale()`** llama `VerResulEmi`:
+   - `CodEstado` 1 (en proceso), 3 (con advertencia) o desconocido → `Pending`;
+   - 0 o 4 → `Rejected`, con el motivo;
+   - 2 → llama `ObtBonInterMul` y devuelve los bonos.
 
-**Flujo** (se parece a Webpay: redirigir y después consultar):
-1. **`VtaBonInterMul`**: inicia la venta con el convenio, el profesional tratante, el beneficiario, el cajero y las prestaciones (código, ítem, cantidad, monto), más las URL de éxito y error. Devuelve `NumTransac` y `CodAuditoria`, o `CodError` = 1 con `GloError`.
-2. **Ventana de IMED:** se abre con `NroAuditoria` y `NumTransac`. **Allí IMED identifica al beneficiario** (huella u otro método), confirma y cobra el copago. El RCE no ve nada de eso.
-3. **Consulta del resultado:** `VerResulEmi` y `ObtBonInterMul`.
-   - `CodEstado`: 1 = en proceso, 2 = emitido, 3 = emitido con advertencia, 0 y 4 = error. Confirmar el significado oficial.
-   - `ObtBonInterMul` devuelve los bonos, uno o varios folios:
-     - por bono: `FolioBono`, `MontoTotal`;
-     - por prestación: `MontoBon` (bonificación), `MontoCopago`, `EsGes` y `CodPatologia`/`CodCanasta`;
-     - seguros complementarios (`ListaOtrasBon`) y formas de pago (`ListaForPag`; `CodForPag` 6 = excedente).
-4. **`AnulBonInterfaz`:** anula un folio (se llama una vez por cada folio).
+   Cada bono trae folio y total, y cada prestación su bonificación, copago, seguro complementario y marca GES. El excedente es la forma de pago 6. **No graba nada**: se puede repetir sin duplicar.
+4. **`cancel()`** llama `AnulBonInterfaz` con un folio por llamada:
+   - `CodError` 0 → anulado;
+   - `CodError` 1 → `cancelled: false`, con el motivo;
+   - sin respuesta o con error de red → excepción. **Nunca se da por anulado sin certeza.**
 
-**Errores de melisa que NO hay que repetir:**
-- Estado guardado en la sesión PHP, sin llave de idempotencia (un doble clic crea otra venta).
-- Consulta cada 5 s sin límite y sin timeout.
-- Bonos grabados en cada consulta, antes de ver el estado (duplicados).
-- Una anulación que falla por red se marca como exitosa. Con varios folios, una falla a medias deja todo inconsistente.
-- Montos y folio tomados del formulario del navegador.
-- La clave de IMED copiada en cada fila de la transacción y guardada en texto plano en `parametro`.
-- Páginas de retorno con XSS y creación de archivos con nombre controlado por quien envía el POST.
-- Excepciones SOAP sin capturar (error 500).
+## Pendientes antes de activar
+- **Validar con el kit:**
+  - nombres y anidación de los campos;
+  - formato de los RUN (se rellenan con ceros a 12 caracteres, `ImedRun`);
+  - significado de `CodEstado` 3 (hoy queda pendiente);
+  - formato de `FecEmi` (se asume AAAAMMDD);
+  - honorarios y pabellón (`CodItem` 8, 1 y 2; melisa manda `MtoTotal` en vez de `MontoPrest`);
+  - tipo de tratamiento y fechas de tratamiento (hoy fijos: 1 y `19000101`).
+- **Puerto 80 y DMZ.** IMED atiende por HTTP plano (puerto 80/8080, sin TLS), así que usuario y clave viajan legibles. En producción la salida a IMED va por una **DMZ o proxy de salida** con IP fija, y solo esa máquina sale por ese puerto.
+  - Se puede simular en local con Docker: una red interna sin salida a internet para `php`, más un contenedor proxy (por ejemplo, Squid) que es el único con salida y solo permite el host de IMED. Un IMED simulado (WSDL más respuestas fijas) en otro contenedor permite probar de punta a punta sin el IMED real. Va con su ADR cuando se haga.
+  - Exigir a IMED un canal cifrado si lo ofrece.
+- Página de retorno desde la ventana de IMED: toca `Platform/Security` y requiere confirmación.
 
-## Impacto en el contrato (decidir al implementar; cambia `Contract/`)
-Hoy `VoucherProviderInterface` supone `validate()` → `issueVoucher()` → `cancel()` en el servidor. IMED funciona de otra forma:
-- inicia la venta y redirige a su ventana;
-- después se consulta el resultado, que puede quedar "en proceso";
-- puede entregar varios folios por venta;
-- no hay un `validate()` separado.
+## Errores de melisa_prod que este adaptador evita
+- **Idempotencia:** la referencia vive en el intento, no en la sesión PHP.
+- **Confirmar sin efectos:** consultar no graba bonos (melisa los duplicaba en cada consulta).
+- **Montos y folios** solo desde la respuesta de IMED, nunca desde el navegador.
+- **Anulación:** una anulación sin respuesta o con error de red nunca se marca como anulada.
+- **Errores de red:** los faults SOAP se capturan (en melisa daban error 500), con timeout corto y sin consultas infinitas, porque el intento expira.
+- **Credenciales:** van por centro y cifradas, nunca copiadas en cada transacción.
+- **Datos para auditoría:** sin RUN ni datos del paciente; solo transacción, estado, folios y glosas.
 
-Probablemente convenga un flujo como el de pagos (`start` → `PaymentNextStep::Redirect` → `confirm`, que puede quedar `Pending`) y un resultado con varios folios, cada uno con bonificación, copago, seguro complementario y marca GES.
-
-## Reglas
-- Credenciales por centro con `ProviderCredentialsInterface`, cifradas. Nunca en logs ni copiadas en cada transacción.
-- **Datos sensibles:** viajan el RUN, la previsión y las prestaciones del paciente. Nunca en logs ni en mensajes de error.
-- Montos y folios **solo** desde la respuesta de IMED, nunca desde el navegador.
-- Anulación: si falla, el bono sigue vigente. Se reintenta y se alerta; nunca se marca como anulado.
-- **Tests obligatorios:** camino feliz con uno y con varios folios, en proceso, error de IMED, timeout, consulta repetida (no duplica), anulación fallida (no se marca como anulado), anulación parcial con varios folios.
+## Tests
+`tests/Unit/Integration/Payments/Adapter/Imed/`, con IMED simulado (`FakeImedSoap`): inicio, rechazo al iniciar, varias transacciones, en proceso, con advertencia, error, uno y varios folios (seguro, excedente, GES), consulta repetida, emitido pero ilegible, anulación OK, rechazada, sin respuesta y con error de red, formato de RUN, WSDL inalcanzable.
