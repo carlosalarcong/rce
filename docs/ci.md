@@ -1,6 +1,6 @@
 # CI del RCE: hook y runner propio
 
-Basado en el de acredita360. Dos niveles de revisión:
+Dos niveles de revisión:
 
 | Qué | Dónde corre | Cuándo | Comando |
 |---|---|---|---|
@@ -31,7 +31,6 @@ GitHub le manda la CI y muestra el resultado, sin gastar minutos de GitHub.
 - `make runner`: construye la imagen, lo registra **en el repositorio `carlosalarcong/rce`** la primera vez (con tu sesión de `gh`) y lo deja corriendo. Se reinicia solo con Docker.
 - `make runner-logs`, `make runner-detener` y `make runner-quitar` (este último lo da de baja en GitHub).
 - **Activarlo:** la variable del repositorio `CI_RUNNER=rce-local` (`gh variable set CI_RUNNER --body rce-local`). Sin la variable, la CI corre en `ubuntu-26.04` de GitHub.
-- **Es aparte del runner de acredita360.** Ese está registrado en la organización `nexia-health` y no puede servir a un repo personal. Los dos corren en paralelo, un trabajo cada uno.
 - **Cómo funciona por dentro:** maneja el Docker del equipo por su socket. Su carpeta de trabajo (`~/.rce-runner/trabajo`) se monta en la misma ruta dentro y fuera, porque `compose.yaml` monta `./` y esa ruta la resuelve el Docker del equipo.
 - **Seguridad:** quien controla el runner controla el Docker del equipo. El repositorio es privado y el runner sirve solo a ese repo. No hacerlo público mientras use este runner.
 - **Requisitos:** el computador encendido (si no, la CI espera) y Docker con memoria suficiente.

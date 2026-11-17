@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# El runner propio de GitHub Actions en este equipo (docs/ci.md). Basado en el de acredita360.
+# El runner propio de GitHub Actions en este equipo (docs/ci.md).
 #
 #   scripts/runner/runner.sh iniciar   construye la imagen, lo registra en GitHub (la primera vez) y lo deja corriendo
 #   scripts/runner/runner.sh detener   lo detiene; queda registrado y vuelve con «iniciar»

@@ -215,11 +215,11 @@ El whiteboard [Mapa de módulos RCE](https://claude.ai/artifact/SMhQcqUSiPsa6q5d
 
 ## 7. Por qué el inicio de sesión vive dentro del RCE (y no en un sistema aparte)
 
-**La pregunta:** ¿las cuentas de las personas deberían vivir en un sistema central aparte, como Nexia Core para Acredita360, o dentro del RCE?
+**La pregunta:** ¿las cuentas de las personas deberían vivir en un sistema central aparte, o dentro del RCE?
 
 **La decisión (ADR 0005, 2026-11-16):** dentro del RCE, en el módulo `Platform/Identity`, porque **el RCE será el único producto**.
 
-**En simple:** un sistema central aparte sirve cuando hay **varios productos** que comparten a las mismas personas, como Nexia, que atiende a Acredita360, Consult y otros. Con un solo producto, separarlo es como tener una portería en otro edificio solo para entrar a uno: más caminos, más cosas que se pueden caer y más trabajo, sin ganar nada.
+**En simple:** un sistema central aparte sirve cuando hay **varios productos** que comparten a las mismas personas. Con un solo producto, separarlo es como tener una portería en otro edificio solo para entrar a uno: más caminos, más cosas que se pueden caer y más trabajo, sin ganar nada.
 
 | | Sistema aparte | Dentro del RCE (elegido) |
 |---|---|---|
@@ -237,7 +237,7 @@ El whiteboard [Mapa de módulos RCE](https://claude.ai/artifact/SMhQcqUSiPsa6q5d
 **Cuándo se revisaría:** si aparece un segundo producto que comparta las cuentas, si clínicas grandes exigen entrar con su cuenta de Microsoft o Google para varios sistemas, o si identidad y producto los mantienen equipos distintos. Para ese día, el módulo se diseña de modo que sacarlo sea mover una pieza, no rehacer el RCE.
 
 **Qué pasó con lo que se avanzó:**
-- `rce-central` (la copia de Nexia Core) quedó **archivado** en GitHub, como referencia;
+- `rce-central` quedó **archivado** en GitHub, como referencia;
 - `rce-ui` (los componentes de pantalla) y `rce-recetas-flex` siguen en uso para el RCE.
 
 ---

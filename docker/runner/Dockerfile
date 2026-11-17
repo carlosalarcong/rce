@@ -1,6 +1,5 @@
 # Runner propio de GitHub Actions para el RCE (docs/ci.md). Ubuntu + el runner oficial de GitHub
 # (verificado con su SHA-256) + el cliente de Docker, que maneja el Docker del equipo por su socket.
-# Basado en el de acredita360.
 # Versión fija: la última LTS estable. Al cambiarla, actualizar también runs-on en .github/workflows/ci.yml.
 FROM ubuntu:26.04
 

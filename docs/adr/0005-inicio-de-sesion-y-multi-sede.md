@@ -2,7 +2,7 @@
 
 - **Estado:** aceptada (2026-11-16, Carlos). Cada paso de implementación se planifica y confirma aparte, porque toca `Platform/Security`, `Platform/Identity`, la configuración de Hakam, migraciones y el `CLAUDE.md` raíz.
 - **Fecha:** 2026-11-16
-- **Reemplaza** la versión anterior de esta ADR, que ponía la identidad en un proyecto aparte (rce-central, copia de Nexia Core).
+- **Reemplaza** la versión anterior de esta ADR, que ponía la identidad en un proyecto aparte (rce-central).
 
 ## Contexto
 - Un profesional puede trabajar en varias clínicas. Debe entrar **una vez** y cambiar de clínica sin volver a iniciar sesión (`docs/specs/navegacion-por-areas.md`, idea B).
@@ -12,13 +12,13 @@
 - **El RCE será el único producto** (Carlos, 2026-11-16).
 
 ## Por qué la identidad no va en un sistema aparte
-Se evaluó un sistema central separado (rce-central), al estilo de Nexia Core, y se descartó.
-- **Nexia lo necesita porque es una familia de productos** que comparten personas y organizaciones. El RCE es uno solo.
+Se evaluó un sistema central separado (rce-central) y se descartó.
+- **Un sistema central sirve a una familia de productos** que comparten personas y organizaciones. El RCE es uno solo.
 - **Separar suma costos sin beneficio para un solo producto:**
   - dos despliegues, dos bases y dos CI;
   - inicio de sesión federado (OIDC) entre los dos, con llaves, revalidación y avisos firmados;
   - un punto de falla más: si el central se cae, nadie entra al RCE;
-  - mantener todo el código heredado de Nexia (catálogo de productos, entitlements, estándares, Portal).
+  - mantener código heredado que el RCE no usa (catálogo de productos, entitlements, estándares, Portal).
 - **El MVP no tiene margen** (2,6 a 3 meses con 2 personas).
 - **La ventaja de seguridad se conserva sin separar:** las cuentas viven en la base **Main**, que ya está separada de las bases clínicas de cada clínica.
 
@@ -125,7 +125,7 @@ Con una base por clínica, una falla en la base de una clínica afecta **solo a 
   - el cambio de clínica sin membresía se rechaza;
   - la sesión de soporte no se mezcla con la de clínica;
   - una persona sin el segundo factor exigido no entra.
-- **UI:** las pantallas pueden partir de `rce/ui` (copia de `nexia/ui`, repositorio `carlosalarcong/rce-ui`), con su receta en `carlosalarcong/rce-recetas-flex`.
+- **UI:** las pantallas pueden partir de `rce/ui` (repositorio `carlosalarcong/rce-ui`), con su receta en `carlosalarcong/rce-recetas-flex`.
 
 ## Orden de implementación (cada paso con su plan y confirmación)
 1. `Platform/Identity`: cuentas en Main, inicio de sesión, recuperación de contraseña.

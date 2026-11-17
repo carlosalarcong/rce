@@ -2,7 +2,6 @@
 
 - **Estado:** aceptada
 - **Fecha:** 2026-11-15
-- **Antecedente:** acredita360, decisión D-70 (el mismo patrón, ya en producción).
 
 ## Contexto
 Desplegamos en Google Cloud Platform. Hakam lee la conexión de cada tenant desde `tenant_db_config` en Main, incluida la clave en texto plano, y su DTO exige `host`, `port` y `user` no nulos. Quien leyera esa tabla (un respaldo, un volcado o una consulta) obtendría la clave de **todas** las bases clínicas.
@@ -24,7 +23,7 @@ Desplegamos en Google Cloud Platform. Hakam lee la conexión de cada tenant desd
 
 ## Consecuencias
 - Hay un solo usuario y una sola clave para todas las bases de tenant. Si más adelante queremos un usuario por centro, `TenantDbPassword` pasaría a leer un secreto por tenant, sin cambiar los decoradores.
-- Pendiente para el despliegue: Cloud Run llega a Cloud SQL por el socket `/cloudsql/<proyecto>:<región>:<instancia>` (`?host=` en la URL). Validar cómo queda `db_host` en ese caso; acredita360 lo resolvió en `ConexionPorSocketTest` y en `docs/operacion/DESPLIEGUE-GCP.md`.
+- Pendiente para el despliegue: Cloud Run llega a Cloud SQL por el socket `/cloudsql/<proyecto>:<región>:<instancia>` (`?host=` en la URL). Validar cómo queda `db_host` en ese caso.
 
 ## Otros detalles de Hakam encontrados
 - `tenant:database:create --dbid=X` convierte X a entero y lo busca en la columna `subdomain`, así que no sirve con nuestro identificador. Usar `--all`.

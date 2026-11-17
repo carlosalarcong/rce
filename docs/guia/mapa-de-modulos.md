@@ -115,7 +115,7 @@ El **% entre corchetes** es el avance real en el código a esa fecha. El detalle
 
 - **1 · Fundaciones**
   **146 a 210 h**
-  - Base de Asygna + doble factor
+  - Cuentas + doble factor
   - Auditoría, cifrado, respaldos
   - Catálogos: CIE-10, aranceles
   - Adjuntos cifrados

@@ -39,17 +39,17 @@ Cambiar entre Ambulatorio, Urgencia, Hospitalizado, Enfermería, Pabellón y las
   - cuánto dura;
   - que un borrador **no es** un registro clínico firmado: no aparece en la ficha hasta que se guarda de verdad.
 
-### B. Un mismo usuario, varios centros (como Acredita360)
+### B. Un mismo usuario, varios centros
 - Un profesional asociado a varias clínicas entra **una vez** y cambia de clínica desde el menú del usuario (arriba a la derecha), sin volver a iniciar sesión.
 - El centro activo se muestra siempre en la cabecera.
 - El cambio de centro guarda borradores (idea A) y abre la última área usada en ese centro.
-- **Choca con lo decidido hoy; requiere ADR antes de implementar.** Acredita360 lo resolvió en su D-21 (con D-20):
+- **Choca con lo decidido hoy; requiere ADR antes de implementar.** Propuesta:
   - un solo host por producto, en vez de un subdominio por centro;
   - el centro activo sale de un TenantContext validado y guardado en la sesión;
   - un listener antes del firewall despacha `SwitchDbEvent`;
   - el resolver por subdominio de Hakam queda apagado;
   - el usuario de seguridad va atado al centro (se compara en `refreshUser`);
-  - identidad única federada (Nexia Core): quién entra a qué centro lo decide la identidad central; qué puede hacer adentro lo decide cada base.
+  - identidad única federada: quién entra a qué centro lo decide la identidad central; qué puede hacer adentro lo decide cada base.
 
   Adoptarlo en el RCE cambia:
   - `CLAUDE.md` raíz ("el tenant se resuelve por subdominio" y "usuarios del centro en la base del tenant");

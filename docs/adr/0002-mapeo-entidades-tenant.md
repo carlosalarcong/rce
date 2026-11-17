@@ -38,4 +38,4 @@ Además, `Domain/` no puede tener atributos de Doctrine: el mapeo va en `Infrast
 ## Consecuencias
 - **Las entidades no pueden ser `final`.** Doctrine ORM 3 genera "lazy ghosts" y falla con `Cannot generate lazy ghost: class ... is final`.
 - Agregar un submódulo con entidades implica tocar `doctrine.yaml`. Ese archivo requiere confirmación, según `src/Platform/Tenancy/CLAUDE.md`.
-- Los directorios de mapeo de Main y de tenant no se pueden anidar entre sí: el driver escanea recursivamente y mapearía dos veces (la misma lección está en acredita360).
+- Los directorios de mapeo de Main y de tenant no se pueden anidar entre sí: el driver escanea recursivamente y mapearía dos veces.

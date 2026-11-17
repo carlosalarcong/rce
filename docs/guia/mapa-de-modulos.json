@@ -564,7 +564,7 @@
    "h": 330,
    "kind": "rounded",
    "size": "body",
-   "text": "**1 · Fundaciones**\n**146 a 210 h**\n- Base de Asygna + doble factor\n- Auditoría, cifrado, respaldos\n- Catálogos: CIE-10, aranceles\n- Adjuntos cifrados\n- Monitoreo (Sentry)\n- Alta del centro por script",
+   "text": "**1 · Fundaciones**\n**146 a 210 h**\n- Cuentas + doble factor\n- Auditoría, cifrado, respaldos\n- Catálogos: CIE-10, aranceles\n- Adjuntos cifrados\n- Monitoreo (Sentry)\n- Alta del centro por script",
    "textAlign": "left",
    "type": "shape",
    "w": 220,
