@@ -88,7 +88,7 @@ Modulo/
 - `tests/` replica la estructura de `src/`: `Unit/`, `Integration/`, `Functional/`.
 - Lo clínico, la caja y los permisos necesitan tests de casos borde (no solo el camino feliz).
 - Antes de terminar una tarea: `make check` debe pasar (tests, PHPStan, Deptrac, estilo, lint y reglas). El hook `pre-push` corre `make ci-rapida` y la CI corre `make check` en el runner propio (ver `docs/ci.md`).
-- Ramas: solo `master` y `develop`.
+- Ramas: `master` y `develop` son las principales. Se permiten ramas de trabajo que salen de `develop` y vuelven a `develop` (ej. `clinical`).
 
 ## Cómo trabajar en este repo (para Claude Code)
 1. **Lee el `CLAUDE.md` del módulo** antes de tocarlo.
