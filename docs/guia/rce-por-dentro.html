@@ -185,6 +185,7 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
       <a href="#identidad">Inicio de sesión</a>
       <a href="#caidas">Si una clínica cae</a>
       <a href="#login">Iniciar sesión</a>
+      <a href="#normativa">Normativa</a>
     </nav>
   </header>
 
@@ -677,6 +678,39 @@ footer { font-size: 14px; color: var(--muted); border-top: 1px solid var(--line)
       </table>
     </div>
     <div class="rule"><strong>En tu computador:</strong> <code>make cuenta EMAIL=tu@correo.cl</code> crea tu cuenta; entra por <code>http://rce.localhost:8180</code>; los correos de prueba llegan a Mailpit en <code>http://localhost:8025</code> y nunca salen a internet.</div>
+  </section>
+
+  <section id="normativa">
+    <div class="sec-head">
+      <span class="path">Ley 20.584 · Decreto 41 · Ley 21.719 · Ley 19.628</span>
+      <h2>Normativa: ¿la arquitectura cumple?</h2>
+    </div>
+    <p>Una sola dirección para todas las clínicas no incumple ninguna norma: las normas chilenas exigen resultados (confidencialidad, control de acceso, registro de accesos, conservación), no una forma técnica. <em>No es asesoría legal: antes de la primera clínica real, revisarlo con un abogado de salud o de datos.</em></p>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Norma</th><th>Qué exige</th><th>¿La dirección única lo afecta?</th></tr></thead>
+        <tbody>
+          <tr><td>Ley 20.584</td><td>Ficha reservada: solo acceden quienes atienden al paciente.</td><td>No: lo garantiza el control de acceso.</td></tr>
+          <tr><td>Decreto 41 Minsal</td><td>Confidencialidad, registro de accesos, conservación de 15 años.</td><td>No: auditoría y respaldos.</td></tr>
+          <tr><td>Ley 21.719</td><td>Seguridad adecuada, aviso de filtraciones, contrato con cada clínica.</td><td>No: una base por clínica separa más que una dirección.</td></tr>
+          <tr><td>Ley 19.628</td><td>Cuidado y reserva de los datos.</td><td>No.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-box">
+      <table>
+        <thead><tr><th>Requisito</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Separación de datos entre clínicas</td><td>Hecho.</td></tr>
+          <tr><td>Control de acceso</td><td>En curso: inicio de sesión listo; faltan clínica activa y permisos.</td></tr>
+          <tr><td><strong>Registro de quién vio o cambió qué</strong></td><td><strong>Pendiente y obligatorio antes de la primera clínica real.</strong></td></tr>
+          <tr><td>Cifrado de datos sensibles</td><td>Pendiente, en el plan.</td></tr>
+          <tr><td>Conservación de 15 años y respaldos</td><td>Pendiente, en el plan.</td></tr>
+          <tr><td>Datos en Chile</td><td>Región de GCP en Santiago.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule"><strong>Fuera del código:</strong> contrato con cada clínica como encargado del tratamiento, procedimiento para avisar filtraciones y política de privacidad.</div>
   </section>
 
   <footer>Versión en texto en el repositorio: <code>docs/guia/como-funciona-el-rce.md</code>. Decisiones completas en <code>docs/adr/</code>.</footer>

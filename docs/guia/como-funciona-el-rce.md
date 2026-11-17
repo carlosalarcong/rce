@@ -293,3 +293,34 @@ Mientras tanto, esa clínica queda en **modo mantenimiento** con un aviso claro,
 - crea tu cuenta con `make cuenta EMAIL=tu@correo.cl` (pide la contraseña sin mostrarla);
 - entra por `http://rce.localhost:8180`;
 - los correos de prueba llegan a **Mailpit**, en `http://localhost:8025`, y nunca salen a internet.
+
+---
+
+## 10. Normativa: ¿la arquitectura cumple?
+
+**Una sola dirección para todas las clínicas (`app.rce.cl`) no incumple ninguna norma.** Las normas chilenas exigen **resultados**: confidencialidad, control de acceso, registro de quién vio qué y conservación. No imponen una forma técnica, como tener una dirección por clínica. *No es asesoría legal: antes de la primera clínica real, revisarlo con un abogado de salud o de datos.*
+
+| Norma | Qué exige (en lo que toca) | ¿La dirección única lo afecta? |
+|---|---|---|
+| **Ley 20.584** (derechos de los pacientes) | La ficha clínica es reservada: solo acceden quienes atienden al paciente | No. Lo garantiza el control de acceso, no la dirección |
+| **Decreto 41 del Minsal** (reglamento de fichas clínicas) | Confidencialidad, registro de los accesos y conservación por al menos 15 años | No. Se cumple con la auditoría y los respaldos |
+| **Ley 21.719** (protección de datos personales, la nueva) | Medidas de seguridad adecuadas, aviso de filtraciones, contrato con cada clínica | No. La separación real es **una base de datos por clínica**, más fuerte que separar por dirección |
+| **Ley 19.628** (la ley de datos vigente mientras entra la nueva) | Cuidado y reserva de los datos | No |
+
+**Estado de lo que sí importa:**
+
+| Requisito | Estado |
+|---|---|
+| Separación de datos entre clínicas (una base por clínica) | Hecho |
+| Control de acceso | En curso: cuentas e inicio de sesión listos; faltan clínica activa (paso 2) y permisos por perfil (paso 3) |
+| **Registro de quién vio o cambió qué en la ficha** (`Platform/Audit`) | **Pendiente y obligatorio antes de la primera clínica real** |
+| Cifrado de datos sensibles y adjuntos | Pendiente, en el plan |
+| Conservación de 15 años y respaldos | Pendiente, en el plan (respaldo por clínica, ADR 0005 §9) |
+| Datos alojados en Chile | Usar la región de GCP en Santiago (`southamerica-west1`) |
+
+**Lo que no es código, pero también se necesita:**
+- un contrato con cada clínica como **encargado del tratamiento de datos**;
+- un procedimiento para **avisar filtraciones**, que la Ley 21.719 exige;
+- una política de privacidad.
+
+**En corto:** la dirección única no es un riesgo legal. Lo que sí sería un incumplimiento es **atender pacientes reales sin la auditoría de accesos**, y eso ya está en la lista.
