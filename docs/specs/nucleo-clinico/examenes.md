@@ -1,7 +1,7 @@
 # Exámenes (órdenes y resultados)
 
 - **Módulo:** `Clinical/Order`
-- **Cobertura de la NT820 v3.0:** **ninguna.** La norma menciona los "exámenes complementarios" como dato clínico básico (p. 174), pero no los estandariza.
+- **Cobertura de la NT 231 (NT820):** **ninguna.** La norma menciona los "exámenes complementarios" como dato clínico básico (p. 174), pero no los estandariza.
 - **Estado:** borrador, 2026-11-17
 
 ## Lo que sí viene de la NT820 (de otros capítulos)

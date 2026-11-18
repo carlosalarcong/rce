@@ -1,7 +1,7 @@
-# Paciente según la NT820
+# Paciente según la NT 231 (NT820)
 
 - **Módulo:** `Clinical/Patient`
-- **Norma:** NT820 v3.0, Capítulo II "Estándares de datos de la persona" (p. 42-93) y Capítulo IV para la dirección (p. 157-173)
+- **Norma:** NT 231 "Estándares de Información en Salud" (conocida como NT820), aprobada por el Decreto Exento 9/2023, Capítulo II "Estándares de datos de la persona" (p. 42-93) y Capítulo IV para la dirección (p. 157-173)
 - **Estado:** borrador, 2026-11-17
 
 "Persona" es quien solicita y recibe atención. Si viene un acompañante, se registra su relación o parentesco con el paciente (p. 42).
@@ -45,11 +45,14 @@ Reglas de la norma:
 | Caso | Cómo se identifica según la norma | Qué cuidar |
 |---|---|---|
 | Chileno o extranjero con RUN | Código 1, RUN propio | — |
-| Recién nacido sin inscribir | Código 2, RUN de la madre o del progenitor, más el folio del comprobante de parto (código 3) | Es **transitorio**: al inscribirlo se agrega su RUN y los anteriores quedan como historial. En gemelos o mellizos el RUN de la madre se repite, así que **no puede ser único**; el folio de parto los distingue |
-| Extranjero con pasaporte | Código 4 | Alfanumérico, no se valida como RUN. Cambia al renovar el pasaporte |
-| Extranjero con documento de su país | Código 5 (DNI, cédula, etc.) | Alfanumérico. Conviene guardar el país que lo emitió |
+| Recién nacido sin inscribir, con RUN de la madre o del progenitor | Código 2 | Es **transitorio**: al inscribirlo se agrega su RUN y el anterior queda como historial. En gemelos o mellizos el RUN de la madre se repite, así que **no puede ser único** |
+| Recién nacido sin RUN propio ni de la madre | Código 3, folio del comprobante de parto | Es un identificador **distinto** del código 2, también transitorio. En partos múltiples la norma sugiere registrar los dos (código 2 y código 3) para distinguir a cada hijo (p. 52) |
+| Extranjero con pasaporte | Código 4 | Alfanumérico, no se valida como RUN. Cambia al renovar el pasaporte. Se guarda el **país que lo emitió** |
+| Extranjero con documento de su país | Código 5 (DNI, cédula, etc.) | Alfanumérico. Se guarda el **país que lo emitió** (ver abajo) |
 | Extranjero indocumentado o con visa en trámite | Código 6, identificador provisorio de FONASA | Tiene forma de RUN. Se vincula después con el documento definitivo |
 | Sin ningún documento ni identificador FONASA | **La norma no lo cubre** | Igual hay que poder atenderlo y registrarlo. Pendiente en ADR 0007 (junto con los pacientes sin identificar, NN) |
+
+**País que emitió el documento:** la NT 231 no tiene este campo, pero hace falta porque dos países pueden emitir el mismo número. Lo exige el perfil FHIR de paciente del Minsal (`MINSAL Paciente` v0.4.9, guía NID): la extensión `PaisEmisor` va en `identifier.type` y es obligatoria (1..1) en los identificadores RUN, RUN materno, pasaporte, documento del país de origen y NIP. Fuente: https://build.fhir.org/ig/Minsal-CL/NID/StructureDefinition-MINSALPaciente.html (es una guía en construcción, puede cambiar).
 
 **Decisión (2026-11-17): el RUN admite hasta 9 dígitos** más el dígito verificador. Se sigue la tabla de detalle de la norma (p. 53). La regla vale para los tipos con forma de RUN (1, 2 y 6). Los tipos 3, 4 y 5 son alfanuméricos de hasta 100 caracteres y no pasan por el validador de RUN.
 

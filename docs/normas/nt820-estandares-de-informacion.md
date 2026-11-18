@@ -1,5 +1,7 @@
 # Norma Técnica 820 — Estándares de Información de Salud (versión 3.0)
 
+> **Vigencia (verificado 2026-11-17):** esta versión fue aprobada como **Norma Técnica N° 231 "Estándares de Información en Salud"** por el Decreto Exento N° 9 del Minsal, del 24-02-2023, publicado en el Diario Oficial el 06-03-2023. El decreto deja sin efecto el Decreto Exento 643 de 2016 y dice que la norma "es comúnmente conocida como Norma Técnica N° 820". El texto aprobado tiene 196 páginas, igual que el PDF resumido aquí; no se ha comparado línea por línea. Fuente: https://www.diariooficial.interior.gob.cl/publicaciones/2023/03/06/43494/01/2280987.pdf
+
 Referencia de trabajo para el RCE. Resume y transcribe las definiciones, estructuras y listas de valores de la norma. No reemplaza al documento original.
 
 > **Numeración de páginas.** Las citas `(p. NNN)` son la página del PDF (1..198). La norma imprime su propio pie "Página N | 196", que va **una página atrás** del PDF (p. ej. PDF p. 60 = "Página 59").
@@ -1343,7 +1345,7 @@ Fuente: Orientaciones para la Planificación y Programación en Red 2022.
 - Las correcciones de identidad (cambio de nombre o sexo registral, paso de identificador provisorio a RUN) son enmiendas con historial, nunca sobrescritura.
 
 ### Preguntas abiertas y ambigüedades de la norma
-1. **Estado de la norma:** la tabla de versiones dice que la 3.0 está "En tramitación" y que "sustituirá" a la Res. Exenta 643 (p. 16). Hay que confirmar si existe una resolución que la aprueba y su fecha de vigencia.
+1. **Estado de la norma — resuelto:** la tabla de versiones dice "En tramitación" (p. 16), pero el Decreto Exento N° 9 de 24-02-2023 (Diario Oficial 06-03-2023) la aprobó como Norma Técnica N° 231 y dejó sin efecto el Decreto Exento 643 de 2016. Ver la nota de vigencia al inicio.
 2. **Pasaporte:** en la tabla resumen aparece como `TipoIdentificadorCodigo` = 3 (p. 44). En el detalle, el pasaporte es 4 y el folio es 3 (p. 54). Usamos el detalle.
 3. **Máximo del RUN:** el resumen dice 99999999 y el detalle 999999999 con largo 9 (p. 44 vs. p. 53). Definir si el RUN se valida por largo o por rango.
 4. **Segundo apellido:** el resumen dice "Obligatorio en quienes poseen dos apellidos" y el detalle "Opcional" (p. 43 vs. p. 50).

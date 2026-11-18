@@ -1,7 +1,7 @@
-# Diagnósticos según la NT820
+# Diagnósticos según la NT 231 (NT820)
 
 - **Módulo:** `Clinical/Diagnosis`
-- **Norma:** NT820 v3.0, Capítulo V 3 "Diagnóstico clínico" (p. 177)
+- **Norma:** NT 231 "Estándares de Información en Salud" (conocida como NT820), aprobada por el Decreto Exento 9/2023, Capítulo V 3 "Diagnóstico clínico" (p. 177)
 - **Cobertura:** completa para lo que la norma define.
 - **Estado:** borrador, 2026-11-17
 

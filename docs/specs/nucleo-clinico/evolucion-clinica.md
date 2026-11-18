@@ -1,7 +1,7 @@
-# Evolución clínica según la NT820
+# Evolución clínica según la NT 231 (NT820)
 
 - **Módulo:** `Clinical/Encounter`
-- **Norma:** NT820 v3.0, Capítulo V "Estándares de proceso asistencial" (p. 174-187) y Capítulo II 2.2 para la edad (p. 58)
+- **Norma:** NT 231 "Estándares de Información en Salud" (conocida como NT820), aprobada por el Decreto Exento 9/2023, Capítulo V "Estándares de proceso asistencial" (p. 174-187) y Capítulo II 2.2 para la edad (p. 58)
 - **Cobertura:** parcial. La norma define la anamnesis, el tipo de consulta y la edad. **No define** el examen físico, los signos vitales ni la estructura de la nota de evolución.
 - **Estado:** borrador, 2026-11-17
 

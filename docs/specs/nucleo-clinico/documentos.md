@@ -1,7 +1,7 @@
 # Documentos clínicos
 
 - **Módulo:** `Clinical/ClinicalDocument`
-- **Cobertura de la NT820 v3.0:** **ninguna.** La norma no define consentimientos, licencias ni informes.
+- **Cobertura de la NT 231 (NT820):** **ninguna.** La norma no define consentimientos, licencias ni informes.
 - **Estado:** borrador, 2026-11-17
 
 ## Lo que sí viene de la NT820 (de otros capítulos)
