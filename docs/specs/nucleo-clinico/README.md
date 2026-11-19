@@ -18,8 +18,11 @@ Documenta los seis bloques del núcleo clínico (`src/Clinical/`) contra la **No
 | Receta e indicaciones | `Clinical/Prescription` | **No la cubre** | [receta-e-indicaciones.md](receta-e-indicaciones.md) |
 | Exámenes | `Clinical/Order` | **No la cubre** | [examenes.md](examenes.md) |
 | Documentos | `Clinical/ClinicalDocument` | **No la cubre** | [documentos.md](documentos.md) |
+| Interconsultas, vacunas, procedimientos, otros profesionales | Por definir | Parcial | [bloques-faltantes.md](bloques-faltantes.md) |
 
 **Hallazgo importante:** la NT 231 (NT820) solo estandariza datos de la persona, del sistema de salud, geográficos y tres datos del proceso clínico (anamnesis, diagnóstico y tipo de consulta). Receta, exámenes y documentos se rigen por otras normas. Esos tres archivos dejan anotado qué norma habría que revisar, sin afirmar su contenido.
+
+**Marco legal:** las leyes que aplican a cada bloque (Ley 20.584, Decreto 41, Ley 21.668, Ley 21.719, Ley 19.799, recetas, GES, notificación obligatoria, vacunas y licencia médica) están verificadas en [`docs/normas/marco-legal-nucleo-clinico.md`](../../normas/marco-legal-nucleo-clinico.md). Cada bloque tiene una sección "Exigencias legales" y otra "Por diseñar".
 
 ## Reglas que valen para los seis bloques
 

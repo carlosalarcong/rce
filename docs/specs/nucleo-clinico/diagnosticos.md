@@ -35,8 +35,19 @@
 | D3 | CIE-11 | La norma la admite; el `CLAUDE.md` exige CIE-10 | Solo CIE-10 en el MVP; la estructura lo permite después |
 | D4 | SNOMED CT | La pizarra lo menciona, pero la NT820 solo pide CIE-10 o CIE-11 para el diagnóstico | Revisar la tabla del Capítulo I (p. 35-37) antes de decidir |
 
-## Lo que la NT820 no define y el RCE necesita
+## Exigencias legales (verificadas)
 
-- **Diagnóstico principal y secundarios** de una atención (lo piden la caja, GES y los informes).
-- **Marca GES**: si el diagnóstico corresponde a un problema GES. `DecisionSupport` lo recuerda al cerrar la atención.
-- **Lista de problemas** del paciente (diagnósticos que siguen activos entre atenciones).
+Detalle y fuentes en [marco-legal-nucleo-clinico.md](../../normas/marco-legal-nucleo-clinico.md).
+
+- **GES** (Ley 19.966 art. 24; Circular IF/N°469): al **confirmar** un diagnóstico GES, el prestador informa al paciente y deja constancia en el **Formulario de Constancia de Información al Paciente GES**, firmado por prestador y paciente (puede ser electrónico). En los oncológicos, un formulario por cada etapa. No se altera y se conserva 15 años.
+- **Enfermedades de notificación obligatoria** (DS 7/2019): el médico notifica a la SEREMI de inmediato ante la sospecha o en 24 horas desde la confirmación, según la enfermedad. El establecimiento nombra un delegado de epidemiología.
+
+## Por diseñar
+
+1. **Catálogo CIE-10 oficial** del DEIS (versión OMS), de solo lectura y versionado.
+2. **Diagnóstico principal y secundarios:** uno solo principal por atención, obligatorio.
+3. **Estado y fechas:** activo o resuelto, desde cuándo.
+4. **Lista de problemas del paciente:** lo que sigue activo entre atenciones.
+5. **Lateralidad** cuando corresponde (derecha, izquierda, bilateral).
+6. **GES:** relación entre CIE-10 y problema de salud GES (con decreto, sexo y edad), aviso al confirmar, y el formulario de constancia con firma del paciente. En oncológicos, la etapa.
+7. **Notificación obligatoria:** catálogo de enfermedades con su plazo (inmediata o 24 h), aviso al médico al diagnosticar y formulario para la SEREMI. Ver si los privados pueden usar EpiVigila.

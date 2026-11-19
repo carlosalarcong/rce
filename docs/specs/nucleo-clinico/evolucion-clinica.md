@@ -66,9 +66,27 @@ La edad **se calcula** con la fecha de nacimiento y la fecha de la atención. No
 Exigencia: opcional "cuando corresponde". Se marcan en la atención, no en el paciente:
 Ley de urgencia, GES, Ricarte Soto, accidente laboral, escolar o de tránsito. Afectan la caja y GES.
 
-## Lo que la NT820 no define y el RCE necesita
+## Exigencias legales (verificadas)
 
-- **Examen físico** y **signos vitales** (presión, pulso, temperatura, saturación, peso, talla). Hacen falta para `DecisionSupport` (rangos por edad). Habría que definir unidades y rangos, y revisar si la tabla de terminologías del Capítulo I (p. 35-37) recomienda LOINC o SNOMED CT.
-- **Estructura de la nota** (por ejemplo SOAP) y el **plan**.
-- **Firma** de la atención: quién, cuándo y con qué cierra la nota. Después de firmar, toda corrección es una enmienda (decisión 2, pendiente).
-- **Borrador** de una nota a medio escribir: no es registro clínico hasta que se firma (ver `docs/specs/navegacion-por-areas.md`, idea A).
+Detalle y fuentes en [marco-legal-nucleo-clinico.md](../../normas/marco-legal-nucleo-clinico.md).
+
+- **Registro cronológico y fechado** de todas las atenciones: consultas, anamnesis, evoluciones, indicaciones, procedimientos, resultados de exámenes, interconsultas y derivaciones, hojas de enfermería y epicrisis (Decreto 41 art. 6 c).
+- **Cada registro con la identificación y la firma del profesional** (art. 7). La firma no necesita ser avanzada.
+- **Se registra durante la atención o inmediatamente después**, y también la información entregada de palabra (arts. 2 y 3).
+- **Autenticidad de los cambios** (Ley 20.584 art. 12; Decreto 41 art. 8): todo cambio debe poder demostrarse. El RCE lo cumple con enmiendas.
+- **Rechazo de tratamiento y alta voluntaria** quedan en la ficha (Decreto 41 art. 6 d).
+- **Consentimiento informado:** la aceptación o el rechazo quedan por escrito en la ficha (Ley 20.584 art. 14). Ver [documentos.md](documentos.md).
+
+## Por diseñar
+
+1. **La atención:** profesional, sede, fecha y hora de inicio y término, modalidad (presencial o telemedicina) y tipo de atención por profesión.
+2. **Motivo de consulta** como dato propio.
+3. **Signos vitales y examen físico:** peso, talla, IMC (calculado), temperatura, presión arterial, frecuencia cardíaca y respiratoria, saturación y perímetro cefálico en niños; con unidad y rangos por edad que usa `DecisionSupport`. Revisar si conviene LOINC y UCUM.
+4. **Campos y secciones configurables por especialidad**, sobre una base fija común.
+5. **Escalas clínicas:** dolor y otras según especialidad.
+6. **Plan e indicaciones no farmacológicas:** reposo, dieta, cuidados.
+7. **Próximo control:** propone la cita a la agenda.
+8. **Notas de otros profesionales:** enfermería, matrona, nutrición, psicología, kinesiología.
+9. **Firma, borrador y enmiendas** (decisión 5 del orden).
+10. **Adjuntos de la atención:** fotos y documentos, cifrados.
+11. **Epicrisis o resumen de la atención** para entregar al paciente.

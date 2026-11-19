@@ -175,10 +175,28 @@ En el RCE:
 | A5 | Teléfono | "Al menos 1 teléfono" en el resumen; móvil obligatorio en el detalle (p. 47 vs. 91) | **Decidido: al menos uno.** Se sigue el resumen para no dejar fuera a quien no tiene celular |
 | A6 | Nombre del campo de pueblo indígena | `PuebloIndigenaCodigoGlosa` en el resumen y `PuebloIndigenaPertenenciaGlosa` en el detalle | Solo afecta la exportación |
 
-## Lo que la NT820 no define y el RCE necesita
+## Exigencias legales (verificadas)
 
-- Número de ficha (lo exige el Decreto 41, art. 6). Pendiente en la decisión 1.
-- Pacientes sin identificar (NN) y personas sin ningún documento. Pendiente en ADR 0007.
-- Fusión de fichas duplicadas. Pendiente en ADR 0007.
-- Contacto de emergencia o tutor legal más allá del "otro teléfono".
-- Fallecimiento (fecha y causa).
+Detalle y fuentes en [marco-legal-nucleo-clinico.md](../../normas/marco-legal-nucleo-clinico.md).
+
+- **Contenido mínimo de la identificación** (Decreto 41 art. 6 a): nombre, tipo y número de documento, sexo, fecha de nacimiento, domicilio, teléfonos, ocupación, **representante legal o apoderado** y sistema de salud. Debe estar **actualizada** y se verifica en cada atención (art. 7).
+- **Número de ficha, fecha de creación y prestador** (Decreto 41 art. 6 b).
+- **Decisiones del paciente** que van en la ficha (Decreto 41 art. 6 d): rechazos de tratamiento, alta voluntaria y requerimientos por convicciones religiosas, étnicas o culturales.
+- **Datos personales** (Ley 21.719, desde 01-12-2026): para atender no se necesita consentimiento del paciente (art. 16 bis e); la ficha **no se suprime** aunque el paciente lo pida (art. 7); una corrección pedida por el paciente se hace como enmienda (art. 6).
+- **Quién puede ver la ficha** (Ley 20.584 art. 13): lista cerrada de ocho casos. Base para los permisos.
+
+## Por diseñar
+
+1. **Identificadores y número de ficha** (decisión 1, rama `arquitecto`).
+2. **Antecedentes con estructura**, separados como en la anamnesis remota: mórbidos, quirúrgicos, gineco-obstétricos, hábitos, medicamentos en uso, familiares, inmunizaciones y transfusiones.
+3. **Alergias completas:** sustancia (¿qué catálogo?), tipo de reacción, gravedad, quién la informó, fecha, y la diferencia entre "sin alergias conocidas" y "no consultado".
+4. **Embarazo y lactancia vigentes:** cambian lo que se puede recetar.
+5. **Grupo sanguíneo.**
+6. **Representante legal o apoderado** (exigido por el Decreto 41): quién es, relación, documento y desde cuándo. Firma consentimientos cuando el paciente no puede.
+7. **Contacto de emergencia**, distinto del representante.
+8. **Fallecimiento:** fecha, para no agendar ni enviar recordatorios.
+9. **Ficha confidencial:** acceso más restringido (salud mental, VIH, funcionarios del mismo centro).
+10. **Pacientes sin ningún documento y sin identificar (NN)**, y **fusión de fichas duplicadas** (ADR de identidad del paciente).
+11. **Búsqueda de pacientes y aviso de posibles duplicados**, sin mostrar el RUN completo de otras personas.
+12. **Copia de la ficha para el paciente:** completa, gratuita y en formato estructurado y portable (Ley 20.584 art. 13).
+13. **Historia de un sistema anterior:** cargar la historia de un centro que se cambia al RCE (fichas antiguas y PDF escaneados), sin mezclarla con los registros nuevos.

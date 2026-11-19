@@ -14,12 +14,18 @@
 | Diagnóstico o hipótesis que justifica el examen | Cap. V 3 | [diagnosticos.md](diagnosticos.md) |
 | Código de la prestación (7 dígitos, como texto) | Cap. III 2.4, arancel FONASA (p. 103-104) | `Platform/Catalog`; el precio lo usa la caja |
 
-## Por revisar (no verificado)
+## Exigencias legales (verificadas)
 
-- Si la tabla de terminologías del Capítulo I (p. 35-37) recomienda **LOINC** para exámenes de laboratorio o **SNOMED CT** para procedimientos.
-- Cómo llegan los resultados de laboratorios externos (HL7 v2 o FHIR): es Fase 5, `Integration/`.
+- **Resultados de exámenes, interconsultas y derivaciones** son parte del contenido mínimo de la ficha (Decreto 41 art. 6 c). Ver [marco-legal-nucleo-clinico.md](../../normas/marco-legal-nucleo-clinico.md).
 
-## Reglas del RCE que ya aplican
+## Por diseñar
 
-- Un resultado recibido no se modifica. Si el laboratorio corrige, llega un resultado nuevo que reemplaza al anterior y ambos quedan visibles.
-- Los resultados son datos de salud: sensibles y auditados.
+1. **Catálogo de exámenes** asociado a la prestación (código FONASA de 7 dígitos) y **perfiles** (paquetes de exámenes).
+2. **La orden:** prioridad, indicación clínica, diagnóstico asociado y estados (solicitada, tomada, con resultado, anulada).
+3. **Resultados como valores:** examen, valor, unidad, rango de referencia y marca de anormal, además del PDF. Revisar si conviene LOINC.
+4. **Resultados críticos:** a quién se avisa y registro de que el médico lo vio.
+5. **Resultados externos** que trae el paciente (adjunto con fecha y laboratorio).
+6. **Informes de imágenes.**
+7. **Integración con laboratorio e imágenes** (HL7 v2 o FHIR): un centro con laboratorio propio lo pedirá antes de la Fase 5.
+8. **Un resultado recibido no se modifica:** si el laboratorio corrige, llega uno nuevo y ambos quedan visibles.
+9. **Interconsultas y derivaciones:** ver [bloques-faltantes.md](bloques-faltantes.md).

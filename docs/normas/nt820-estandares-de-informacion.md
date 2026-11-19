@@ -19,7 +19,7 @@ Referencia de trabajo para el RCE. Resume y transcribe las definiciones, estruct
   - La vigencia rige desde la resolución del Departamento Jurídico del Minsal. El DEIS fija la exigencia para la **tributación** (envío) de datos al Ministerio (p. 22).
   - "El modelamiento de los datos de los sistemas de información deberá permitir la continuidad, renovación y especificar con qué versión del estándar se está trabajando" (p. 22). Para el RCE, esto significa que los catálogos deben guardar su versión.
 - **Por qué le importa al RCE:** la norma define los datos mínimos y las listas de valores que debe usar cualquier sistema que capture datos de pacientes, profesionales y establecimientos, y que después informe al Minsal (REM, interoperabilidad, HCC). Diseñar con ella desde el MVP evita tener que homologar datos después.
-- **Vocabulario en CSV/XLSX:** la norma publica las tablas en `https://deis.minsal.cl/VocabularioNorma820.xlsx` (p. 26). Las listas largas se remiten a ese archivo.
+- **Vocabulario en CSV/XLSX:** la norma publica las tablas en `https://deis.minsal.cl/VocabularioNorma820.xlsx` (p. 26). Las listas largas se remiten a ese archivo. Copia local: `docs/normas/VocabularioNorma820.xlsx` (última modificación 31-08-2023).
 
 ## 2. Cómo leer las tablas de la norma
 
@@ -324,7 +324,13 @@ Notas:
 | 3 | Testigo de Jehová |
 | 4 | Judaica |
 | 5 | Mormón |
-| … | lista completa en VocabularioNorma820.xlsx |
+| 6 | Musulmana |
+| 7 | Ortodoxa |
+| 8 | Otra religión o credo |
+| 9 | Ninguna, ateo, agnóstico |
+| 99 | Desconocido |
+
+(Lista completa tomada de `VocabularioNorma820.xlsx`, hoja `ReligionesCulto`.)
 
 | Variable | Campo | Tipo | Largo | Exigencia |
 |---|---|---|---|---|
@@ -1094,6 +1100,9 @@ La informa el prestador a la SEREMI.
 
 #### 1.3 Comuna (p. 161)
 - **Valores:** códigos DPA de 4-5 dígitos (1101 Iquique, 1102 Camiña, 1103 Colchane, 1104 Huara, …). Lista completa en VocabularioNorma820.xlsx (la norma no indica el número de entradas).
+- **Lo que trae el xlsx (hoja `Comunas`):** 346 comunas + `99999 Ignorada`, con fuente "Decreto Exento N° 817 del Ministerio del Interior (D.O. 26-03-2010)" y ya con la región de Ñuble (códigos 16xxx).
+  - **Los códigos del ejemplo de la norma no coinciden con el xlsx:** en el xlsx Camiña es `1402` y Colchane `1403`, no `1102` y `1103`. Se usa el xlsx.
+  - En el xlsx los códigos vienen como **número** (`1101`), pero el campo de la norma es **Texto de 5** (`ComunaCodigo`, tabla resumen). Al cargar el catálogo se completan con cero a la izquierda (`01101`); si no, un cruce entre texto y número pierde las comunas de las regiones 1 a 9.
 
 | Variable | Campo | Tipo | Largo | Exigencia |
 |---|---|---|---|---|
@@ -1352,7 +1361,7 @@ Fuente: Orientaciones para la Planificación y Programación en Red 2022.
 5. **Campos que apuntan a la glosa:** muchos campos son `...Glosa` aunque la lista es codificada. `EstadoCivilGlosa` incluso es "Numérico". No está claro si se intercambia el código o el texto.
 6. **Identidad de género:** no hay código 3. ¿Es una eliminación intencional? No reutilizarlo.
 7. **Pueblos indígenas:** Chango tiene código 11 y "Otro" código 10 (p. 72). El campo tiene distinto nombre en el resumen y en el detalle.
-8. **Religión, títulos, especialidades médicas, instituciones, provincias, comunas y ocupaciones detalladas** solo traen un extracto. La lista completa está en el xlsx del DEIS, que **no se revisó** para este documento.
+8. **Listas en extracto — resuelto:** el xlsx del DEIS ya está en `docs/normas/VocabularioNorma820.xlsx` y trae las listas completas (religión, títulos, especialidades, instituciones, provincias, comunas, ocupaciones detalladas, países). Texto original de esta pregunta: religión, títulos, especialidades médicas, instituciones, provincias, comunas y ocupaciones detalladas solo traen un extracto. La lista completa está en el xlsx del DEIS, que **no se revisó** para este documento.
 9. **Región:** "Obligatorio" en el capítulo IV (p. 159), pero "Opcional" en la dirección de la persona y del establecimiento (p. 90, 154), y "Obligatorio" para el prestador individual (p. 116).
 10. **Teléfonos:** el resumen exige "al menos 1 teléfono" (p. 47) y el detalle exige el móvil (p. 91).
 11. **Número de dirección:** es Numérico 10 pero debe admitir "S/N" (p. 167).
@@ -1368,4 +1377,4 @@ Fuente: Orientaciones para la Planificación y Programación en Red 2022.
 
 ## Fuente
 
-Ministerio de Salud de Chile, Departamento de Estadísticas e Información de Salud (DEIS). *Norma Técnica 820: Estándares de Información de Salud*, versión 3.0, 12-01-2023, 198 páginas (PDF). El texto se obtuvo por OCR. Las tablas de códigos, los largos, los tipos y los marcadores de exigencia se verificaron contra las imágenes de las páginas citadas. La tabla de sistemas de codificación del Capítulo I (p. 35-37) no se verificó por su mala calidad. No se consultó el archivo `VocabularioNorma820.xlsx`.
+Ministerio de Salud de Chile, Departamento de Estadísticas e Información de Salud (DEIS). *Norma Técnica 820: Estándares de Información de Salud*, versión 3.0, 12-01-2023, 198 páginas (PDF). El texto se obtuvo por OCR. Las tablas de códigos, los largos, los tipos y los marcadores de exigencia se verificaron contra las imágenes de las páginas citadas. La tabla de sistemas de codificación del Capítulo I (p. 35-37) no se verificó por su mala calidad. Las listas de valores se contrastaron con `VocabularioNorma820.xlsx` del DEIS (49 hojas; creado 29-06-2022, última modificación 31-08-2023), guardado en `docs/normas/VocabularioNorma820.xlsx`. Coinciden los identificadores, sexo biológico, identidad de género, estado civil, pueblos originarios, previsión, tipo de otro teléfono, anamnesis, diagnóstico y tipo de consulta. El xlsx **no trae la CIE-10**: el catálogo de diagnósticos hay que obtenerlo aparte del DEIS (CIE-10 de la OMS, no la CIE-10-ES española).

@@ -101,3 +101,4 @@ Modulo/
 ## Documentación
 - `docs/specs/`: una especificación por bloque del plan (pantallas, reglas, casos borde).
 - `docs/adr/`: decisiones de arquitectura (una por archivo, numeradas).
+- `docs/investigacion/`: investigación de competencia y de usuarios (un archivo por tema, con la fecha al inicio del nombre). Es contexto, no decide nada: lo que salga de ahí se decide en una ADR.
